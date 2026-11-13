@@ -1,8 +1,11 @@
+using System.Reactive.Concurrency;
+using Busynet.Bar.Buttons;
+using Microsoft.Extensions.Logging;
 using Refit;
 
 namespace Busynet.Bar;
 
-internal sealed class BarFactory(IHttpClientFactory httpClients) : IBarFactory
+internal sealed class BarFactory(IHttpClientFactory httpClients, ILoggerFactory loggerFactory) : IBarFactory
 {
     public IBarDisplay CreateDisplay(BarConnection connection)
     {
@@ -15,5 +18,15 @@ internal sealed class BarFactory(IHttpClientFactory httpClients) : IBarFactory
 
         var settings = new RefitSettings(new SystemTextJsonContentSerializer(BarJson.Options));
         return new BarDisplay(RestService.For<IBusyBarApi>(client, settings));
+    }
+
+    public IObservable<ButtonEvent> CreateButtonEvents(BarConnection connection)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+
+        return ButtonEventStream.Create(
+            ct => StatusSocket.ReadFramesAsync(connection, ct),
+            DefaultScheduler.Instance,
+            loggerFactory.CreateLogger(typeof(ButtonEventStream)));
     }
 }
