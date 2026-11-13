@@ -45,7 +45,7 @@ document is silent, busyboy's observable behaviour wins.
 | Topic | Decision |
 |---|---|
 | Runtime | **.NET 11** (`net11.0`), C# latest. SDK 11.0.100 is installed. |
-| CLI | **Spectre.Console.Cli** for commands, options, help, validation. |
+| CLI | **System.CommandLine** for commands, options, help, validation (reflection-free, so Native-AOT-compatible; Spectre.Console.Cli was replaced for this reason). |
 | Bar HTTP | **Refit** interface over the bar's HTTP API. Spec: `http://busybar.infra.home/openapi.yaml` (device API 27.15.0) — vendor a copy into `docs/references/openapi.yaml`. |
 | Events | **Rx.NET** (`System.Reactive`) for the button stream *and* the watch loop itself (approach A, below). |
 | Repo | Public GitHub repo `mb-dot-dev/busynet`; create with `gh repo create` before the first push. |
@@ -62,7 +62,7 @@ through one pipeline removes busyboy's lock. Cost: less familiar to read; tests 
 timing logic come back and the reusable pieces are less clean.
 
 **C. Generic Host + BackgroundService.** Free logging/config/shutdown, but heavyweight for one-shot commands
-like `text` and awkward alongside Spectre's own app lifecycle.
+like `text` and awkward alongside the CLI parser's own app lifecycle.
 
 Chosen: **A** — it is what "Rx.NET handles events" means and yields the reusable pipeline `gh workflow` needs.
 
@@ -77,7 +77,7 @@ busynet/
     Busynet.Core/                # no I/O knowledge of bar/Claude/CLI
     Busynet.Bar/                 # everything BUSY Bar: Refit API, display models, layouts, button stream
     Busynet.Claude/              # credentials + usage API
-    Busynet.Cli/                 # Spectre app, commands, DI wiring, feature slices (Features/ClaudeLimits)
+    Busynet.Cli/                 # System.CommandLine app, commands, DI wiring, feature slices (Features/ClaudeLimits)
   tests/
     Busynet.Core.Tests/ Busynet.Bar.Tests/ Busynet.Claude.Tests/ Busynet.Cli.Tests/
   docs/references/openapi.yaml
@@ -154,12 +154,12 @@ busyboy's `watch.py`.
   malformed body → transient; other 4xx → `ClaudeException` (fatal). No message ever contains the token or body.
 
 ### Cli
-- Spectre `CommandApp` with a DI `ITypeRegistrar` over `Microsoft.Extensions.DependencyInjection`;
+- `BusynetApp` builds the `System.CommandLine` tree by hand and a `ServiceProvider` over `Microsoft.Extensions.DependencyInjection`;
   `IHttpClientFactory` + Refit registration.
-- **Shared settings base** (`BarCommandSettings`: `--host`, `--token`, `--verbose`) inherited by every bar
+- **Shared settings base** (`BarOptions`/`BarSettings`: `--host`, `--token`, `--verbose`) inherited by every bar
   command.
 - **Error → exit code**: success silent, exit 0; expected failure (`BusynetException`) → one line on stderr,
-  exit 1; usage errors → Spectre's own rendering, exit 2 (verify Spectre's default and set it if not).
+  exit 1; usage errors (parse or validation, including `busynet claude` with no subcommand) → message on stderr, exit 2.
   `--verbose`: Debug logging to stderr and the original exception's stack trace is shown.
 - **Ctrl+C** → `CancellationToken` that disposes the watch subscription (triggering clear-on-exit), then exit 0.
 - `--version`.
@@ -184,7 +184,7 @@ busyboy's `watch.py`.
   because the bar answers `409` to a draw while a higher-priority app — e.g. a BUSY work session — owns the
   display; the command must start quietly and draw once the display is free, not exit 1. busynet sends no
   explicit draw `priority` (as busyboy) — out of scope here.
-- `--interval` must be ≥ 1 (Spectre validation → usage error, exit 2). Ctrl+C during startup exits like Ctrl+C in
+- `--interval` must be ≥ 1 (option validation → usage error, exit 2). Ctrl+C during startup exits like Ctrl+C in
   the loop (clear, exit 0).
 - Draws are serialised: a press and a poll arriving together never produce overlapping draw requests (e.g.
   `Select(draw).Concat()`).
@@ -211,7 +211,7 @@ busyboy's `watch.py`.
   feeding it encoded protobuf frames through a seam (no real socket).
 - No test may read the developer's real keychain, credentials file, or env (`BUSYBOY_*`): token resolution
   takes its process runner, file path and clock as dependencies.
-- Cli tests via `Spectre.Console.Cli.Testing` `CommandAppTester` (or equivalent), asserting stderr line and exit
+- Cli tests run `BusynetApp.RunAsync` through an `AppHarness` (stdout/stderr captured), asserting stderr line and exit
   code.
 - Port busyboy's `test_claude.py` / limits-related `test_watch.py` / `test_bar.py` cases as behaviour specs.
 

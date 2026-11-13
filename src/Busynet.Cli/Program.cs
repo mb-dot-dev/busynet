@@ -13,4 +13,4 @@ Console.CancelKeyPress += (_, e) =>
     cts.Cancel();
 };
 
-return await BusynetApp.RunAsync(args, new ServiceCollection().AddBusynet(), Console.Error, cts.Token);
+return await BusynetApp.RunAsync(args, new ServiceCollection().AddBusynet(), Console.Out, Console.Error, cts.Token);

@@ -1,10 +1,11 @@
+using System.CommandLine;
 using System.Reactive.Concurrency;
 using Busynet.Bar;
 using Busynet.Bar.Http;
 using Busynet.Claude.Usage;
 using Busynet.Cli.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Spectre.Console.Cli;
 
 namespace Busynet.Cli.Features.ClaudeLimits;
 
@@ -17,13 +18,31 @@ public sealed class ClaudeLimitsCommand(
     IClaudeUsage usage,
     IScheduler scheduler,
     Func<string, string?> environment,
-    ILogger<ClaudeLimitsCommand> logger) : AsyncCommand<ClaudeLimitsSettings>
+    ILogger<ClaudeLimitsCommand> logger)
 {
     public const string Description =
         "Watch Claude usage limits on the bar until Ctrl+C; the Start button switches between 5-hour and weekly.";
 
-    public override async Task<int> ExecuteAsync(
-        CommandContext context, ClaudeLimitsSettings settings, CancellationToken cancellationToken)
+    /// <summary>The <c>limits</c> command: parses the options, then runs <see cref="ExecuteAsync"/> from <paramref name="provider"/>.</summary>
+    public static Command Define(IServiceProvider provider)
+    {
+        ArgumentNullException.ThrowIfNull(provider);
+
+        var options = new ClaudeLimitsOptions(new BarOptions());
+        var command = new Command("limits", Description);
+        options.AddTo(command);
+        command.SetAction((parse, ct) =>
+        {
+            var (bar, interval) = options.Read(parse);
+            var settings = new ClaudeLimitsSettings(bar.Host, bar.Token, bar.Verbose, interval);
+            // Before the command resolves: the logging filter and the error handler read it.
+            provider.GetRequiredService<Verbosity>().IsVerbose = settings.Verbose;
+            return provider.GetRequiredService<ClaudeLimitsCommand>().ExecuteAsync(settings, ct);
+        });
+        return command;
+    }
+
+    public async Task<int> ExecuteAsync(ClaudeLimitsSettings settings, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(settings);
 

@@ -2,13 +2,12 @@ using Busynet.Cli.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Spectre.Console;
 
 namespace Busynet.Cli.Tests;
 
 /// <summary>
 /// Runs <see cref="BusynetApp"/> over the real registration with an empty environment, capturing our stderr
-/// lines and Spectre's console output. Tests add overrides to <see cref="Services"/> before <see cref="RunAsync"/>.
+/// lines and the help/version output. Tests add overrides to <see cref="Services"/> before <see cref="RunAsync"/>.
 /// </summary>
 public sealed class AppHarness : IDisposable
 {
@@ -22,12 +21,6 @@ public sealed class AppHarness : IDisposable
         Services.RemoveAll<ILoggerProvider>();
         // Never the developer's real BUSYBOY_* variables.
         Services.AddSingleton<Func<string, string?>>((IServiceProvider _) => name => env.GetValueOrDefault(name));
-        Console = AnsiConsole.Create(new AnsiConsoleSettings
-        {
-            Ansi = AnsiSupport.No,
-            ColorSystem = ColorSystemSupport.NoColors,
-            Out = new AnsiConsoleOutput(ConsoleOut),
-        });
     }
 
     public ServiceCollection Services { get; } = new();
@@ -36,12 +29,10 @@ public sealed class AppHarness : IDisposable
 
     public StringWriter ConsoleOut { get; } = new();
 
-    public IAnsiConsole Console { get; }
-
     public CancellationTokenSource Cts { get; } = new();
 
     public Task<int> RunAsync(params string[] args) =>
-        BusynetApp.RunAsync(args, Services, Stderr, Cts.Token, Console).WaitAsync(Timeout);
+        BusynetApp.RunAsync(args, Services, ConsoleOut, Stderr, Cts.Token).WaitAsync(Timeout);
 
     public void Dispose()
     {
