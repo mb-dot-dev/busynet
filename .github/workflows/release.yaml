@@ -1,0 +1,121 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: macos-latest
+            rid: osx-arm64
+          - os: ubuntu-latest
+            rid: linux-x64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+
+      - name: Publish (native AOT)
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          dotnet publish src/Busynet.Cli -c Release -r "${{ matrix.rid }}" -p:PublishAot=true -p:Version="$VERSION" -p:DebugType=none -o ./publish
+
+      - name: Smoke test
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          test "$(./publish/busynet --version)" = "$VERSION"
+          ./publish/busynet claude limits --help
+
+      - name: Package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ARCHIVE="busynet-${VERSION}-${{ matrix.rid }}.tar.gz"
+          tar -C publish -czf "$ARCHIVE" busynet
+          shasum -a 256 "$ARCHIVE" > "$ARCHIVE.sha256"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: busynet-${{ matrix.rid }}
+          path: busynet-*
+          if-no-files-found: error
+
+  release:
+    name: GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes
+
+  homebrew:
+    name: update Homebrew tap
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --pattern '*.sha256' --dir sums
+
+      - name: Update formula
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA_MAC="$(cut -d' ' -f1 "sums/busynet-${VERSION}-osx-arm64.tar.gz.sha256")"
+          SHA_LINUX="$(cut -d' ' -f1 "sums/busynet-${VERSION}-linux-x64.tar.gz.sha256")"
+          BASE="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}"
+          cat > busynet.rb <<EOF
+          class Busynet < Formula
+            desc "Display Claude Code usage limits and more on a BUSY Bar"
+            homepage "https://github.com/${GITHUB_REPOSITORY}"
+            version "${VERSION}"
+            license "MIT"
+
+            on_macos do
+              depends_on arch: :arm64
+              url "${BASE}/busynet-${VERSION}-osx-arm64.tar.gz"
+              sha256 "${SHA_MAC}"
+            end
+
+            on_linux do
+              depends_on arch: :x86_64
+              url "${BASE}/busynet-${VERSION}-linux-x64.tar.gz"
+              sha256 "${SHA_LINUX}"
+            end
+
+            def install
+              bin.install "busynet"
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/busynet --version")
+            end
+          end
+          EOF
+          SHA="$(gh api repos/mb-dot-dev/homebrew-tap/contents/Formula/busynet.rb --jq .sha 2>/dev/null || true)"
+          gh api -X PUT repos/mb-dot-dev/homebrew-tap/contents/Formula/busynet.rb \
+            -f message="busynet ${VERSION}" \
+            -f content="$(base64 -w0 busynet.rb)" \
+            ${SHA:+-f sha="$SHA"}
