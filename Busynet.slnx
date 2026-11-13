@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Busynet.Core/Busynet.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Busynet.Core.Tests/Busynet.Core.Tests.csproj" />
+    <Project Path="tests/Busynet.Testing/Busynet.Testing.csproj" />
+  </Folder>
+</Solution>

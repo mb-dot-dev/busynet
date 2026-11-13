@@ -491,3 +491,4 @@ nupkg/
 tool/
 TestResults/
 .superpowers/
+TestResults/
