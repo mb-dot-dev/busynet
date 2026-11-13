@@ -7,7 +7,7 @@ using Refit;
 
 namespace Busynet.Bar;
 
-internal sealed class BarFactory(IHttpClientFactory httpClients, ILoggerFactory loggerFactory) : IBarFactory
+internal sealed class BarFactory(IHttpClientFactory httpClients, ILoggerFactory loggerFactory, BarDisplayOptions options) : IBarFactory
 {
     public IBarDisplay CreateDisplay(BarConnection connection)
     {
@@ -19,7 +19,7 @@ internal sealed class BarFactory(IHttpClientFactory httpClients, ILoggerFactory 
             client.DefaultRequestHeaders.Add("X-API-Token", connection.Token);
 
         var settings = new RefitSettings(new SystemTextJsonContentSerializer(BarJson.Options));
-        return new BarDisplay(RestService.For<IBusyBarApi>(client, settings));
+        return new BarDisplay(RestService.For<IBusyBarApi>(client, settings), options.ResponseTimeout);
     }
 
     public IObservable<ButtonEvent> CreateButtonEvents(BarConnection connection)

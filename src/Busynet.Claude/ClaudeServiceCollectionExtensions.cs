@@ -20,12 +20,13 @@ public static class ClaudeServiceCollectionExtensions
         services.AddHttpClient(HttpClientName, c =>
         {
             c.BaseAddress = new Uri("https://api.anthropic.com");
-            c.Timeout = TimeSpan.FromSeconds(15);
+            c.Timeout = ClaudeUsageOptions.DefaultTimeout;
         }).RemoveAllLoggers();
 
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IProcessRunner, ProcessRunner>();
         services.TryAddSingleton(ClaudeCredentialOptions.Default);
+        services.TryAddSingleton(ClaudeUsageOptions.Default);
         services.TryAddSingleton<IClaudeTokenSource, ClaudeTokenSource>();
         services.TryAddTransient<IClaudeUsageApi>(sp =>
             RestService.For<IClaudeUsageApi>(sp.GetRequiredService<IHttpClientFactory>().CreateClient(HttpClientName)));

@@ -18,9 +18,12 @@ public sealed class BarDisplayTests
     private static BarConnection Connection(string? token = null) =>
         new(new Uri("http://bar.test/"), new Uri("ws://bar.test/api/status/ws"), token);
 
-    private static IBarDisplay Create(FakeHttpHandler fake, string? token = null)
+    private static IBarDisplay Create(FakeHttpHandler fake, string? token = null, TimeSpan? timeout = null)
     {
-        var services = new ServiceCollection().AddBusyBar();
+        var services = new ServiceCollection();
+        if (timeout is { } t)
+            services.AddSingleton(new BarDisplayOptions(t));
+        services.AddBusyBar();
         services.AddHttpClient("busybar").ConfigurePrimaryHttpMessageHandler(() => fake);
         return services.BuildServiceProvider().GetRequiredService<IBarFactory>().CreateDisplay(Connection(token));
     }
@@ -137,5 +140,19 @@ public sealed class BarDisplayTests
         await cts.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Create(fake).DrawAsync(Payload, cts.Token));
+    }
+
+    [Fact]
+    public async Task Error_body_that_never_arrives_times_out_as_BarRequestException()
+    {
+        var fake = new FakeHttpHandler();
+        fake.Add(HttpMethod.Post, DrawPath, _ => new HttpResponseMessage(HttpStatusCode.Conflict) { Content = HangingContent.Create() });
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        var ex = await Assert.ThrowsAsync<BarRequestException>(
+            () => Create(fake, timeout: TimeSpan.FromMilliseconds(200)).DrawAsync(Payload, TestContext.Current.CancellationToken));
+
+        Assert.Equal("request error | POST /api/display/draw | TaskCanceledException", ex.Message);
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"took {stopwatch.Elapsed}");
     }
 }

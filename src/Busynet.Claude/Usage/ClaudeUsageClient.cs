@@ -9,7 +9,7 @@ using Refit;
 namespace Busynet.Claude.Usage;
 
 /// <summary>Classifies every failure as fatal (auth) or transient; no message ever includes the token or body.</summary>
-internal sealed partial class ClaudeUsageClient(IClaudeTokenSource tokens, IClaudeUsageApi api) : IClaudeUsage
+internal sealed partial class ClaudeUsageClient(IClaudeTokenSource tokens, IClaudeUsageApi api, ClaudeUsageOptions options) : IClaudeUsage
 {
     private const string Rejected = "Anthropic rejected the Claude Code token. Run `claude` to log in again.";
     private const string Unexpected = "Claude usage API returned an unexpected response";
@@ -18,9 +18,12 @@ internal sealed partial class ClaudeUsageClient(IClaudeTokenSource tokens, IClau
     public async Task<Usage> GetUsageAsync(CancellationToken ct)
     {
         var token = await tokens.GetTokenAsync(ct).ConfigureAwait(false);
+        // Refit returns once the headers arrive, so HttpClient.Timeout does not bound the body read.
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        deadline.CancelAfter(options.ResponseTimeout);
         try
         {
-            using var response = await api.GetUsageAsync(token, ct).ConfigureAwait(false);
+            using var response = await api.GetUsageAsync(token, deadline.Token).ConfigureAwait(false);
             var status = (int)response.StatusCode;
             if (status is 401 or 403)
                 throw new ClaudeAuthException(Rejected);
@@ -31,8 +34,13 @@ internal sealed partial class ClaudeUsageClient(IClaudeTokenSource tokens, IClau
             if (status >= 400)
                 throw new ClaudeException($"Claude usage API returned HTTP {status}");
 
-            var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            var body = await response.Content.ReadAsStringAsync(deadline.Token).ConfigureAwait(false);
             return Parse(body);
+        }
+        catch (InvalidOperationException)
+        {
+            // Thrown by ReadAsStringAsync for an invalid charset; the message is not forwarded.
+            throw new ClaudeTransientException(Unexpected);
         }
         catch (Exception e) when (e is HttpRequestException or OperationCanceledException or ApiRequestException)
         {

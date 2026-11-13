@@ -4,7 +4,7 @@ using Refit;
 
 namespace Busynet.Bar.Http;
 
-internal sealed class BarDisplay(IBusyBarApi api) : IBarDisplay
+internal sealed class BarDisplay(IBusyBarApi api, TimeSpan responseTimeout) : IBarDisplay
 {
     private const string DrawPath = "/api/display/draw";
 
@@ -14,16 +14,19 @@ internal sealed class BarDisplay(IBusyBarApi api) : IBarDisplay
     public Task ClearAsync(CancellationToken ct) =>
         SendAsync("DELETE", ct => api.ClearAsync(BarApplication.Name, ct), ct);
 
-    private static async Task SendAsync(string method, Func<CancellationToken, Task<HttpResponseMessage>> call, CancellationToken ct)
+    private async Task SendAsync(string method, Func<CancellationToken, Task<HttpResponseMessage>> call, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
+        // Refit returns once the headers arrive, so HttpClient.Timeout does not bound the body read.
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        deadline.CancelAfter(responseTimeout);
         try
         {
-            using var response = await call(ct).ConfigureAwait(false);
+            using var response = await call(deadline.Token).ConfigureAwait(false);
             if (response.IsSuccessStatusCode)
                 return;
 
-            var (error, code) = await ReadErrorAsync(response, ct).ConfigureAwait(false);
+            var (error, code) = await ReadErrorAsync(response, deadline.Token).ConfigureAwait(false);
             throw new BarApiException((int)response.StatusCode, method, DrawPath,
                 error ?? response.ReasonPhrase ?? "error", code);
         }

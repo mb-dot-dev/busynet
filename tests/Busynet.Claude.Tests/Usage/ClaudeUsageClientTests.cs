@@ -34,10 +34,12 @@ public sealed class ClaudeUsageClientTests
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    private static IClaudeUsage Create(FakeHttpHandler fake, IClaudeTokenSource? tokens = null)
+    private static IClaudeUsage Create(FakeHttpHandler fake, IClaudeTokenSource? tokens = null, TimeSpan? timeout = null)
     {
         var services = new ServiceCollection();
         services.AddSingleton(tokens ?? new CountingTokens(Secret));
+        if (timeout is { } t)
+            services.AddSingleton(new ClaudeUsageOptions(t));
         services.AddClaude();
         services.AddHttpClient("claude").ConfigurePrimaryHttpMessageHandler(() => fake);
         return services.BuildServiceProvider().GetRequiredService<IClaudeUsage>();
@@ -241,5 +243,35 @@ public sealed class ClaudeUsageClientTests
         await usage.GetUsageAsync(Ct);
 
         Assert.Equal(2, tokens.Calls);
+    }
+
+    [Fact]
+    public async Task Body_that_never_arrives_times_out_as_transient()
+    {
+        var fake = new FakeHttpHandler();
+        fake.Add(HttpMethod.Get, Path, _ => new HttpResponseMessage(HttpStatusCode.OK) { Content = HangingContent.Create() });
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        var ex = await Assert.ThrowsAsync<ClaudeTransientException>(
+            () => Create(fake, timeout: TimeSpan.FromMilliseconds(200)).GetUsageAsync(Ct));
+
+        Assert.Equal("Claude usage request failed: TaskCanceledException", ex.Message);
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"took {stopwatch.Elapsed}");
+    }
+
+    [Fact]
+    public async Task Invalid_charset_is_a_transient_unexpected_response()
+    {
+        var fake = new FakeHttpHandler();
+        fake.Add(HttpMethod.Get, Path, _ =>
+        {
+            var content = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes(Payload));
+            content.Headers.TryAddWithoutValidation("Content-Type", "application/json; charset=bogus");
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
+        });
+
+        var ex = await Assert.ThrowsAsync<ClaudeTransientException>(() => Create(fake).GetUsageAsync(Ct));
+
+        Assert.Equal("Claude usage API returned an unexpected response", ex.Message);
     }
 }

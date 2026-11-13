@@ -1,3 +1,4 @@
+using Busynet.Bar.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Http;
@@ -13,7 +14,8 @@ public static class BarServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         // URLs and headers carry the token: never let IHttpClientFactory log them.
-        services.AddHttpClient(HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(10)).RemoveAllLoggers();
+        services.AddHttpClient(HttpClientName, c => c.Timeout = BarDisplayOptions.DefaultTimeout).RemoveAllLoggers();
+        services.TryAddSingleton(BarDisplayOptions.Default);
         services.TryAddSingleton<IBarFactory, BarFactory>();
         return services;
     }
