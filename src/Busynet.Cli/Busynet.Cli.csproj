@@ -3,7 +3,19 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>busynet</AssemblyName>
     <RootNamespace>Busynet.Cli</RootNamespace>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>busynet</ToolCommandName>
+    <PackageId>busynet</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Console application to display various information on a BUSY Bar.</Description>
+    <Authors>mb-dot-dev</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/mb-dot-dev/busynet</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Spectre.Console.Cli" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
