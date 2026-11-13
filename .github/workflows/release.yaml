@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: macos-latest
+            rid: osx-arm64
+            target: darwin-arm64
+          - os: ubuntu-latest
+            rid: linux-x64
+            target: linux-amd64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+
+      - name: Publish (native AOT)
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          dotnet publish src/Busynet.Cli -c Release -r "${{ matrix.rid }}" -p:PublishAot=true -p:Version="$VERSION" -p:DebugType=none -o ./publish
+
+      - name: Smoke test
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          test "$(./publish/busynet --version)" = "$VERSION"
+          ./publish/busynet claude limits --help
+
+      - name: Package
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ARCHIVE="busynet-${VERSION}-${{ matrix.target }}.tar.gz"
+          tar -C publish -czf "$ARCHIVE" busynet
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: busynet-${{ matrix.target }}
+          path: busynet-*
+          if-no-files-found: error
+
+  release:
+    name: GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes
+
+  homebrew:
+    name: update Homebrew tap
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Justintime50/homebrew-releaser@454cc0d45a99949c9ea0bd9f03e6309df1617628 # v4.0.0
+        with:
+          homebrew_owner: mb-dot-dev
+          homebrew_tap: homebrew-tap
+          github_token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          target_darwin_arm64: true
+          target_linux_amd64: true
+          install: 'bin.install "busynet"'
+          test: 'assert_match version.to_s, shell_output("#{bin}/busynet --version")'
