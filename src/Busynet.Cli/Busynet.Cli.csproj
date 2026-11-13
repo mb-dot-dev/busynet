@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>busynet</AssemblyName>
     <RootNamespace>Busynet.Cli</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Spectre.Console.Cli" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Busynet.Core/Busynet.Core.csproj" />
     <ProjectReference Include="../Busynet.Bar/Busynet.Bar.csproj" />
