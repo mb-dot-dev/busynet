@@ -12,6 +12,12 @@
           "Microsoft.Extensions.Logging.Configuration": "11.0.0"
         }
       },
+      "Microsoft.NET.ILLink.Tasks": {
+        "type": "Direct",
+        "requested": "[11.0.0, )",
+        "resolved": "11.0.0",
+        "contentHash": "gK2aq4XvChj5kvozpPHrkfKkr7zc5Z4xoTrJb4GPZzDEPMlCk0TX632bwY3LsWcX2UVcVRQBBGzsBGC2lq6YhA=="
+      },
       "System.CommandLine": {
         "type": "Direct",
         "requested": "[3.0.0, )",

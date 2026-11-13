@@ -29,7 +29,7 @@ public static class ClaudeServiceCollectionExtensions
         services.TryAddSingleton(ClaudeUsageOptions.Default);
         services.TryAddSingleton<IClaudeTokenSource, ClaudeTokenSource>();
         services.TryAddTransient<IClaudeUsageApi>(sp =>
-            RestService.For<IClaudeUsageApi>(sp.GetRequiredService<IHttpClientFactory>().CreateClient(HttpClientName)));
+            RestService.ForGenerated<IClaudeUsageApi>(sp.GetRequiredService<IHttpClientFactory>().CreateClient(HttpClientName)));
         services.TryAddTransient<IClaudeUsage, ClaudeUsageClient>();
         return services;
     }

@@ -19,7 +19,7 @@ internal sealed class BarFactory(IHttpClientFactory httpClients, ILoggerFactory 
             client.DefaultRequestHeaders.Add("X-API-Token", connection.Token);
 
         var settings = new RefitSettings(new SystemTextJsonContentSerializer(BarJson.Options));
-        return new BarDisplay(RestService.For<IBusyBarApi>(client, settings), options.ResponseTimeout);
+        return new BarDisplay(RestService.ForGenerated<IBusyBarApi>(client, settings), options.ResponseTimeout);
     }
 
     public IObservable<ButtonEvent> CreateButtonEvents(BarConnection connection)

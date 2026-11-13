@@ -77,3 +77,26 @@ jobs:
           name: busynet-nupkg
           path: nupkg/*.nupkg
           if-no-files-found: error
+
+  aot-smoke:
+    name: native AOT smoke test (${{ matrix.os }})
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          global-json-file: global.json
+
+      - name: Publish (native AOT)
+        run: dotnet publish src/Busynet.Cli -c Release -p:PublishAot=true -o ./aot
+
+      - name: Smoke test
+        run: |
+          ./aot/busynet --help
+          ./aot/busynet claude limits --help
