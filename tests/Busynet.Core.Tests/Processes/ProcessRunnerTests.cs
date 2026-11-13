@@ -37,7 +37,7 @@ public sealed class ProcessRunnerTests
         var stopwatch = Stopwatch.StartNew();
 
         await Assert.ThrowsAsync<ProcessRunFailedException>(
-            () => RunSh("sleep 5", TimeSpan.FromMilliseconds(200)));
+            () => RunSh("exec sleep 5", TimeSpan.FromMilliseconds(200)));
 
         Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"took {stopwatch.Elapsed}");
     }
@@ -50,5 +50,18 @@ public sealed class ProcessRunnerTests
         await Assert.ThrowsAsync<ProcessRunFailedException>(
             () => new ProcessRunner().RunAsync(
                 "definitely-not-a-binary-xyz", [], Generous, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task Macos_security_exits_44_for_an_item_that_does_not_exist()
+    {
+        // Pins the "keychain item not found = 44" assumption without reading any real credential.
+        Assert.SkipUnless(OperatingSystem.IsMacOS(), "macOS-only test");
+
+        var outcome = await new ProcessRunner().RunAsync(
+            "security", ["find-generic-password", "-s", $"busynet-test-{Guid.NewGuid()}", "-w"],
+            Generous, TestContext.Current.CancellationToken);
+
+        Assert.Equal(44, outcome.ExitCode);
     }
 }
