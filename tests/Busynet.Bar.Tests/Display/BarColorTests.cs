@@ -14,6 +14,7 @@ public sealed class BarColorTests
     [InlineData("red")]
     [InlineData("#12345")]
     [InlineData("#GGGGGG")]
+    [InlineData("#1F1F1F\n")]
     [InlineData("")]
     public void Color_normalize_rejects_invalid(string input) =>
         Assert.Throws<ArgumentException>(() => BarColor.Normalize(input));

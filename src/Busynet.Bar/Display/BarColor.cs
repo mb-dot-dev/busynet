@@ -18,6 +18,6 @@ public static partial class BarColor
         return upper.Length == 7 ? upper + "FF" : upper;
     }
 
-    [GeneratedRegex(@"^#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$")]
+    [GeneratedRegex(@"^#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})\z")]
     private static partial Regex Hex();
 }

@@ -14,6 +14,7 @@ public sealed class DisplayTextTests
     [InlineData("")]
     [InlineData("é")]
     [InlineData("a\nb")]
+    [InlineData("hi\n")]
     public void TextElement_rejects_non_ascii_and_empty(string text) =>
         Assert.Throws<ArgumentException>(() => new TextElement("id", text, "small", 0, 0));
 }

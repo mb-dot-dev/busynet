@@ -15,7 +15,7 @@ public sealed partial record TextElement(string Id, string Text, string Font, in
         ? Text
         : throw new ArgumentException("Text must be non-empty printable ASCII.", nameof(Text));
 
-    [GeneratedRegex(@"^[\x20-\x7E]+$")]
+    [GeneratedRegex(@"^[\x20-\x7E]+\z")]
     private static partial Regex PrintableAscii();
 }
 
