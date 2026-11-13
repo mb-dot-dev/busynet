@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Parsing;
 using Busynet.Bar;
 
 namespace Busynet.Cli.Infrastructure;
@@ -15,7 +16,9 @@ public sealed class BarOptions
         Host.Validators.Add(result =>
         {
             var host = result.GetValueOrDefault<string?>();
-            if (!string.IsNullOrWhiteSpace(host) && !IsValidHost(host))
+            if (IsOptionNotValue(result, host))
+                result.AddError("Missing value for --host.");
+            else if (!string.IsNullOrWhiteSpace(host) && !IsValidHost(host))
                 result.AddError("Invalid --host value.");
         });
 
@@ -26,7 +29,9 @@ public sealed class BarOptions
         Token.Validators.Add(result =>
         {
             var token = result.GetValueOrDefault<string?>();
-            if (!string.IsNullOrWhiteSpace(token) && !IsValidToken(token))
+            if (IsOptionNotValue(result, token))
+                result.AddError("Missing value for --token.");
+            else if (!string.IsNullOrWhiteSpace(token) && !IsValidToken(token))
                 result.AddError("Invalid --token value.");
         });
 
@@ -57,6 +62,14 @@ public sealed class BarOptions
 
         return new BarSettings(result.GetValue(Host), result.GetValue(Token), result.GetValue(Verbose));
     }
+
+    // `--token --verbose` must not take "--verbose" as the token. The `=` form (`--token=-abc`) stays permissive
+    // for anything that is not one of the command's own options.
+    private static bool IsOptionNotValue(OptionResult result, string? value) =>
+        value is not null
+        && (value is "-h" or "-?" or "--help"
+            || (result.Parent as CommandResult)?.Command.Options
+                .Any(o => o.Name == value || o.Aliases.Contains(value)) == true);
 
     private static bool IsValidHost(string host)
     {

@@ -31,15 +31,6 @@ public static class BusynetApp
         await using var provider = services.BuildServiceProvider();
         var root = BuildRoot(provider, stdout);
 
-        // No arguments: show the help instead of System.CommandLine's "required command" error.
-        var parse = root.Parse(args.Length == 0 ? ["--help"] : args);
-        if (parse.Errors.Count > 0)
-        {
-            foreach (var error in parse.Errors)
-                stderr.WriteLine(error.Message);
-            return ErrorHandler.UsageError;
-        }
-
         var configuration = new InvocationConfiguration
         {
             Output = stdout,
@@ -50,12 +41,31 @@ public static class BusynetApp
         };
         try
         {
+            // No arguments: show the help instead of System.CommandLine's "required command" error.
+            // No response files: an `@value` argument (a token may start with `@`) is an ordinary value.
+            var parse = root.Parse(args.Length == 0 ? ["--help"] : args, new ParserConfiguration { ResponseFileTokenReplacer = null });
+            if (parse.Errors.Count > 0)
+            {
+                foreach (var error in parse.Errors)
+                    stderr.WriteLine(Redact(error.Message, parse.UnmatchedTokens));
+                return ErrorHandler.UsageError;
+            }
+
             return await parse.InvokeAsync(configuration, cancellationToken);
         }
         catch (Exception e)
         {
             return new ErrorHandler(stderr, cancellationToken).Handle(e, provider);
         }
+    }
+
+    // A value left unmatched may be a token given to a misplaced or misspelled option: never echo it.
+    // Unmatched words starting with '-' (the misspelled option itself) are kept: they help and are no secret.
+    private static string Redact(string message, IReadOnlyList<string> unmatched)
+    {
+        foreach (var token in unmatched.Where(t => t.Length > 0 && !t.StartsWith('-')))
+            message = message.Replace($"'{token}'", "'***'", StringComparison.Ordinal);
+        return message;
     }
 
     /// <summary>The informational version without its <c>+commit</c> suffix.</summary>

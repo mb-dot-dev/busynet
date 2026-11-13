@@ -104,4 +104,16 @@ public class OptionParsingTests
 
         Assert.Empty(parse.Errors);
     }
+
+    [Theory]
+    [InlineData("--host", "--verbose")]
+    [InlineData("--token", "--verbose")]
+    [InlineData("--token", "--interval")]
+    [InlineData("--host", "--help")]
+    public void Option_followed_by_another_option_is_error_not_a_value(string option, string next)
+    {
+        var (_, parse) = Parse(option, next);
+
+        Assert.NotEmpty(parse.Errors);
+    }
 }

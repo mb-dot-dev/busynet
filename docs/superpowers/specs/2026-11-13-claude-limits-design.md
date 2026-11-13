@@ -156,7 +156,7 @@ busyboy's `watch.py`.
 ### Cli
 - `BusynetApp` builds the `System.CommandLine` tree by hand and a `ServiceProvider` over `Microsoft.Extensions.DependencyInjection`;
   `IHttpClientFactory` + Refit registration.
-- **Shared settings base** (`BarCommandSettings`: `--host`, `--token`, `--verbose`) inherited by every bar
+- **Shared settings base** (`BarOptions`/`BarSettings`: `--host`, `--token`, `--verbose`) inherited by every bar
   command.
 - **Error → exit code**: success silent, exit 0; expected failure (`BusynetException`) → one line on stderr,
   exit 1; usage errors (parse or validation, including `busynet claude` with no subcommand) → message on stderr, exit 2.

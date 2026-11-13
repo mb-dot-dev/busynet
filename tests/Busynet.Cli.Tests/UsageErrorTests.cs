@@ -125,4 +125,33 @@ public class UsageErrorTests
         Assert.Contains("InvalidOperationException", app.Stderr.ToString(), StringComparison.Ordinal);
         Assert.Contains("never fetched", app.Stderr.ToString(), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task Token_starting_with_at_sign_is_a_value_not_a_response_file()
+    {
+        using var app = new AppHarness();
+        var bar = UseFakes(app, () => throw new ClaudeTransientException("stop here"));
+
+        var exit = await app.RunAsync("claude", "limits", "--token", "@SECRET123");
+
+        Assert.Equal(1, exit);
+        Assert.Equal("@SECRET123", bar.Connections.Single().Token);
+        Assert.DoesNotContain("SECRET123", app.Stderr.ToString(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("--token", "SECRET123", "claude", "limits")]
+    [InlineData("claude", "limits", "--tokn", "SECRET123")]
+    [InlineData("claude", "limits", "--TOKEN", "SECRET123")]
+    public async Task Unmatched_value_after_a_misplaced_or_misspelled_option_is_not_echoed(params string[] args)
+    {
+        using var app = new AppHarness();
+        UseFakes(app);
+
+        var exit = await app.RunAsync(args);
+
+        Assert.Equal(2, exit);
+        Assert.NotEqual("", app.Stderr.ToString());
+        Assert.DoesNotContain("SECRET123", app.Stderr.ToString(), StringComparison.Ordinal);
+    }
 }
