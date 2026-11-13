@@ -1,0 +1,10 @@
+syntax = "proto3";
+package busynet.state;
+option csharp_namespace = "Busynet.Bar.Buttons.Proto";
+
+message State { repeated StateUpdate updates = 2; }
+message StateUpdate { InputEvent input = 11; }
+message InputEvent { ButtonEvent button_event = 1; }
+message ButtonEvent { Button button = 1; ButtonAction action = 2; }
+enum Button { OK = 0; BACK = 1; START = 2; }
+enum ButtonAction { PRESS = 0; RELEASE = 1; }

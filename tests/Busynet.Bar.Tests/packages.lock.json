@@ -229,6 +229,7 @@
         "type": "Project",
         "dependencies": {
           "Busynet.Core": "[1.0.0, )",
+          "Google.Protobuf": "[3.36.2, )",
           "Microsoft.Extensions.Http": "[11.0.0, )",
           "Refit": "[16.4.0, )"
         }
@@ -244,6 +245,12 @@
         "dependencies": {
           "Busynet.Core": "[1.0.0, )"
         }
+      },
+      "Google.Protobuf": {
+        "type": "CentralTransitive",
+        "requested": "[3.36.2, )",
+        "resolved": "3.36.2",
+        "contentHash": "Ci1q1iJg74qAE5riTA2FbMS0wPbpruPQI/JQ9DrAsRo2VsSxgt1e/pmxGxgrci+pXJEgrSYg2vPl8rrStZkclQ=="
       },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "CentralTransitive",
