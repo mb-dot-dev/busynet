@@ -256,7 +256,8 @@
           "Busynet.Claude": "[1.0.0, )",
           "Busynet.Core": "[1.0.0, )",
           "Microsoft.Extensions.Logging.Console": "[11.0.0, )",
-          "Spectre.Console.Cli": "[0.57.2, )"
+          "Spectre.Console.Cli": "[0.57.2, )",
+          "System.CommandLine": "[3.0.0, )"
         }
       },
       "busynet.bar": {
@@ -337,6 +338,12 @@
         "dependencies": {
           "Spectre.Console": "0.57.2"
         }
+      },
+      "System.CommandLine": {
+        "type": "CentralTransitive",
+        "requested": "[3.0.0, )",
+        "resolved": "3.0.0",
+        "contentHash": "swNpSTl0iYJeBuvYYfaY+VxzZ5YC8wklwkqDCNOq2aTQqJzjauJfh/O3Zw93nwxspWrxvZTjT45f8VPR0ParEA=="
       },
       "System.Reactive": {
         "type": "CentralTransitive",
