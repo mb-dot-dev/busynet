@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Busynet.Bar</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Refit" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
+    <Protobuf Include="Buttons/Protos/state.proto" GrpcServices="None" />
+    <ProjectReference Include="../Busynet.Core/Busynet.Core.csproj" />
+  </ItemGroup>
+</Project>
