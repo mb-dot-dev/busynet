@@ -137,6 +137,25 @@ public class ClaudeLimitsCommandTests
     }
 
     [Fact]
+    public async Task Failure_after_cancel_during_startup_exits_zero_silently()
+    {
+        Action? cancel = null;
+        var (app, bar) = Create(new ScriptedUsage(() =>
+        {
+            cancel!();
+            throw new ClaudeTransientException("Claude credentials read failed");
+        }));
+        using var scope = app;
+        cancel = app.Cts.Cancel;
+
+        var exit = await app.RunAsync("claude", "limits");
+
+        Assert.Equal(0, exit);
+        Assert.Equal("", app.Stderr.ToString());
+        Assert.Empty(bar.Display.Calls);
+    }
+
+    [Fact]
     public async Task Cancel_before_start_exits_zero()
     {
         var (app, bar) = Create(new ScriptedUsage(() => SomeUsage));

@@ -43,9 +43,10 @@ public sealed class ClaudeLimitsCommand(
                 cancellationToken);
             return 0;
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (Exception) when (cancellationToken.IsCancellationRequested)
         {
-            // Ctrl+C, at any point, is the normal way to stop.
+            // Ctrl+C, at any point, is the normal way to stop. Any failure seen once it was requested is
+            // fallout of it (SIGINT also kills the child `security` process), so it exits silently.
             return 0;
         }
     }

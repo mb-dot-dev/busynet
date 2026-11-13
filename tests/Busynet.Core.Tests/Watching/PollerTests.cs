@@ -86,6 +86,16 @@ public class PollerTests
     }
 
     [Fact]
+    public void Retry_after_is_capped_at_one_hour()
+    {
+        var h = new Harness(n => n == 1 ? throw new Transient(TimeSpan.FromHours(10)) : n, TimeSpan.Zero);
+        h.RunTo(S(3599));
+        Assert.Equal([S(0)], h.Calls);
+        h.RunTo(S(3600));
+        Assert.Equal([S(0), S(3600)], h.Calls);
+    }
+
+    [Fact]
     public void Retry_after_shorter_than_interval_is_ignored()
     {
         var h = new Harness(n => n == 1 ? throw new Transient(S(10)) : n, TimeSpan.Zero);
