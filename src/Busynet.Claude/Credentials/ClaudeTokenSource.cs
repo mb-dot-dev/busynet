@@ -59,7 +59,7 @@ public sealed class ClaudeTokenSource(IProcessRunner runner, ClaudeCredentialOpt
         {
             bytes = File.ReadAllBytes(options.CredentialsFilePath);
         }
-        catch (IOException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             return null;
         }
@@ -87,7 +87,7 @@ public sealed class ClaudeTokenSource(IProcessRunner runner, ClaudeCredentialOpt
                 || string.IsNullOrEmpty(tokenElement.GetString()))
                 throw new ClaudeAuthException(Unreadable);
 
-            if (oauth.TryGetProperty("expiresAt", out var expiresAt))
+            if (oauth.TryGetProperty("expiresAt", out var expiresAt) && expiresAt.ValueKind != JsonValueKind.Null)
             {
                 if (expiresAt.ValueKind != JsonValueKind.Number)
                     throw new ClaudeAuthException(Unreadable);

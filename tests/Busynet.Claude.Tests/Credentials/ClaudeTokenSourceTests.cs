@@ -151,6 +151,24 @@ public sealed class ClaudeTokenSourceTests : IDisposable
     }
 
     [Fact]
+    public async Task Null_expires_at_is_accepted()
+    {
+        _runner.Result = new ProcessOutcome(0, Blob("kc-token", "null"));
+
+        Assert.Equal("kc-token", await Source().GetTokenAsync(CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Directory_at_credentials_path_is_treated_as_no_file()
+    {
+        _runner.Result = new ProcessOutcome(44, "");
+        Directory.CreateDirectory(FilePath);
+
+        var e = await Assert.ThrowsAsync<ClaudeAuthException>(() => Source().GetTokenAsync(CancellationToken.None));
+        Assert.Equal("No Claude Code credentials found. Run `claude` to log in.", e.Message);
+    }
+
+    [Fact]
     public async Task Missing_expires_at_is_accepted()
     {
         _runner.Result = new ProcessOutcome(0, Blob("kc-token"));
