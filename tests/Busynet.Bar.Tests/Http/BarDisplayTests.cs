@@ -93,6 +93,39 @@ public sealed class BarDisplayTests
         Assert.IsAssignableFrom<BusynetException>(ex);
     }
 
+    private const string NothingDisplayed = """{"error":"this application_name is currently not displaying anything"}""";
+
+    [Fact]
+    public async Task Clear_when_nothing_is_displayed_succeeds()
+    {
+        var fake = new FakeHttpHandler();
+        fake.Add(HttpMethod.Delete, DrawPath, HttpStatusCode.BadRequest, NothingDisplayed);
+
+        await Create(fake).ClearAsync(TestContext.Current.CancellationToken);
+
+        Assert.Single(fake.Calls);
+    }
+
+    [Fact]
+    public async Task Clear_other_400_still_throws()
+    {
+        var fake = new FakeHttpHandler();
+        fake.Add(HttpMethod.Delete, DrawPath, HttpStatusCode.BadRequest, """{"error":"bad deletion data"}""");
+
+        await Assert.ThrowsAsync<BarApiException>(
+            () => Create(fake).ClearAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task Draw_400_with_same_text_still_throws()
+    {
+        var fake = new FakeHttpHandler();
+        fake.Add(HttpMethod.Post, DrawPath, HttpStatusCode.BadRequest, NothingDisplayed);
+
+        await Assert.ThrowsAsync<BarApiException>(
+            () => Create(fake).DrawAsync(Payload, TestContext.Current.CancellationToken));
+    }
+
     [Fact]
     public async Task Non_error_schema_body_falls_back_to_reason_phrase()
     {

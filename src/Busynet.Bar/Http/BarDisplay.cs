@@ -8,13 +8,21 @@ internal sealed class BarDisplay(IBusyBarApi api, TimeSpan responseTimeout) : IB
 {
     private const string DrawPath = "/api/display/draw";
 
+    // Observed on firmware 27.15.0: DELETE /api/display/draw answers 400 with this error when the
+    // application has nothing on screen. The desired state already holds, so clearing treats it as success.
+    private const string NothingDisplayedError = "this application_name is currently not displaying anything";
+
     public Task DrawAsync(DisplayElements payload, CancellationToken ct) =>
         SendAsync("POST", ct => api.DrawAsync(payload, ct), ct);
 
     public Task ClearAsync(CancellationToken ct) =>
-        SendAsync("DELETE", ct => api.ClearAsync(BarApplication.Name, ct), ct);
+        SendAsync("DELETE", ct => api.ClearAsync(BarApplication.Name, ct), ct, IsNothingDisplayed);
 
-    private async Task SendAsync(string method, Func<CancellationToken, Task<HttpResponseMessage>> call, CancellationToken ct)
+    private static bool IsNothingDisplayed(int status, string? error) =>
+        status == 400 && string.Equals(error?.Trim(), NothingDisplayedError, StringComparison.OrdinalIgnoreCase);
+
+    private async Task SendAsync(string method, Func<CancellationToken, Task<HttpResponseMessage>> call, CancellationToken ct,
+        Func<int, string?, bool>? isBenign = null)
     {
         ct.ThrowIfCancellationRequested();
         // Refit returns once the headers arrive, so HttpClient.Timeout does not bound the body read.
@@ -27,6 +35,9 @@ internal sealed class BarDisplay(IBusyBarApi api, TimeSpan responseTimeout) : IB
                 return;
 
             var (error, code) = await ReadErrorAsync(response, deadline.Token).ConfigureAwait(false);
+            if (isBenign?.Invoke((int)response.StatusCode, error) == true)
+                return;
+
             throw new BarApiException((int)response.StatusCode, method, DrawPath,
                 error ?? response.ReasonPhrase ?? "error", code);
         }
