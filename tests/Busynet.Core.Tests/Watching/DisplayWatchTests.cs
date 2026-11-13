@@ -202,4 +202,39 @@ public class DisplayWatchTests
         Assert.Equal([V(0), V(1), V(2)], h.Display.Draws);
         Assert.Equal(1, maxActive);
     }
+    [Fact]
+    public async Task Cancellation_waits_for_in_flight_draw_before_exit_clear()
+    {
+        using var h = new Harness();
+        var draw = new TaskCompletionSource();
+        h.Display.OnDraw = _ => draw.Task;
+        h.Start();
+
+        h.Cts.Cancel();
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+        Assert.Equal([FakeDisplay<View>.Clear, V(0)], h.Display.Calls);
+        Assert.False(h.Task.IsCompleted);
+
+        draw.SetResult();
+        await h.Task;
+        Assert.Equal([FakeDisplay<View>.Clear, V(0), FakeDisplay<View>.Clear], h.Display.Calls);
+    }
+
+    [Fact]
+    public async Task Update_error_waits_for_in_flight_draw_before_exit_clear()
+    {
+        using var h = new Harness();
+        var draw = new TaskCompletionSource();
+        h.Display.OnDraw = _ => draw.Task;
+        h.Start();
+
+        h.Updates.OnError(new FatalTest());
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+        Assert.Equal([FakeDisplay<View>.Clear, V(0)], h.Display.Calls);
+        Assert.False(h.Task.IsCompleted);
+
+        draw.SetResult();
+        await Assert.ThrowsAsync<FatalTest>(() => h.Task);
+        Assert.Equal([FakeDisplay<View>.Clear, V(0), FakeDisplay<View>.Clear], h.Display.Calls);
+    }
 }

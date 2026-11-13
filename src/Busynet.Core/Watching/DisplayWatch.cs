@@ -28,11 +28,16 @@ public static class DisplayWatch
     {
         await display.ClearAsync(cancellationToken);
 
+        // Only touched from inside the Concat'd draws, which never overlap.
+        TView? lastDrawn = null;
+
+        // Held around every draw. Disposing the subscription (cancellation, an error from updates) cancels a
+        // pending draw's token but does not wait for it, so the exit clear takes this gate first - and keeps
+        // it - so that no draw can land after the clear. Not disposed: nothing allocates its wait handle.
+        var drawGate = new SemaphoreSlim(1, 1);
+
         try
         {
-            // Only touched from inside the Concat'd draws, which never overlap.
-            TView? lastDrawn = null;
-
             await updates
                 .StartWith(s => s)
                 .Scan(initial, (state, update) => update(state))
@@ -45,6 +50,7 @@ public static class DisplayWatch
                         return;
                     }
 
+                    await drawGate.WaitAsync(token);
                     try
                     {
                         await display.DrawAsync(view, token);
@@ -53,6 +59,10 @@ public static class DisplayWatch
                     catch (Exception e) when (TransientFailure.IsTransient(e, out _))
                     {
                         logger.LogDebug("Draw failed, will retry on the next update: {Error}", e.Message);
+                    }
+                    finally
+                    {
+                        drawGate.Release();
                     }
                 }))
                 .Concat()
@@ -65,15 +75,17 @@ public static class DisplayWatch
         }
         finally
         {
-            await ClearOnExitAsync(display, logger);
+            await ClearOnExitAsync(display, drawGate, logger);
         }
     }
 
-    private static async Task ClearOnExitAsync<TView>(IDisplay<TView> display, ILogger logger)
+    private static async Task ClearOnExitAsync<TView>(IDisplay<TView> display, SemaphoreSlim drawGate, ILogger logger)
     {
+        using var timeout = new CancellationTokenSource(ExitClearTimeout);
         try
         {
-            using var timeout = new CancellationTokenSource(ExitClearTimeout);
+            // Wait out any in-flight draw; never released, so a late draw cannot follow the clear.
+            await drawGate.WaitAsync(timeout.Token);
             await display.ClearAsync(timeout.Token).WaitAsync(timeout.Token);
         }
         catch (Exception e)
