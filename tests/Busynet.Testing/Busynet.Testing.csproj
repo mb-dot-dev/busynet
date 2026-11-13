@@ -2,4 +2,7 @@
   <PropertyGroup>
     <RootNamespace>Busynet.Testing</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Busynet.Core/Busynet.Core.csproj" />
+  </ItemGroup>
 </Project>

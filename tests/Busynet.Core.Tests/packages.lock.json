@@ -172,7 +172,10 @@
         }
       },
       "busynet.testing": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "Busynet.Core": "[1.0.0, )"
+        }
       },
       "System.Reactive": {
         "type": "CentralTransitive",
