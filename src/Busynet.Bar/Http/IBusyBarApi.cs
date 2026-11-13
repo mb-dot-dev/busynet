@@ -1,6 +1,7 @@
+using Busynet.Bar.Display;
 using Refit;
 
-namespace Busynet.Bar;
+namespace Busynet.Bar.Http;
 
 public interface IBusyBarApi
 {

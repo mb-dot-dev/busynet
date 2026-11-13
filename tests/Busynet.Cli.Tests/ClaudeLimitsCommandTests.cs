@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Net;
 using Busynet.Bar;
+using Busynet.Bar.Display;
 using Busynet.Claude;
 using Busynet.Claude.Credentials;
 using Busynet.Claude.Usage;

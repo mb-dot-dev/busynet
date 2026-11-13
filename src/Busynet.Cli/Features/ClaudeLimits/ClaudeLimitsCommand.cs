@@ -1,5 +1,6 @@
 using System.Reactive.Concurrency;
 using Busynet.Bar;
+using Busynet.Bar.Http;
 using Busynet.Claude.Usage;
 using Busynet.Cli.Infrastructure;
 using Microsoft.Extensions.Logging;

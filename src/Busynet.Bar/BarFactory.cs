@@ -1,5 +1,7 @@
 using System.Reactive.Concurrency;
 using Busynet.Bar.Buttons;
+using Busynet.Bar.Display;
+using Busynet.Bar.Http;
 using Microsoft.Extensions.Logging;
 using Refit;
 

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Busynet.Bar;
+namespace Busynet.Bar.Display;
 
 public static class BarJson
 {

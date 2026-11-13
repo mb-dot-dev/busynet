@@ -1,4 +1,5 @@
 using Busynet.Bar.Buttons;
+using Busynet.Bar.Http;
 
 namespace Busynet.Bar;
 

@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text.Json.Nodes;
+using Busynet.Bar.Display;
 using Busynet.Bar.Layouts;
+using Busynet.Bar.Http;
 using Busynet.Core;
 using Busynet.Testing;
 using Microsoft.Extensions.DependencyInjection;

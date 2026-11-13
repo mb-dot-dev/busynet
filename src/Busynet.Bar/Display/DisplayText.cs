@@ -1,4 +1,4 @@
-namespace Busynet.Bar;
+namespace Busynet.Bar.Display;
 
 public static class DisplayText
 {

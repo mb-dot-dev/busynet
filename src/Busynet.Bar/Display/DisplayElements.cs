@@ -1,4 +1,4 @@
-namespace Busynet.Bar;
+namespace Busynet.Bar.Display;
 
 /// <summary>The bar application every draw and clear is attributed to.</summary>
 public static class BarApplication

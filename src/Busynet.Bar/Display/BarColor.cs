@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Busynet.Bar;
+namespace Busynet.Bar.Display;
 
 public static partial class BarColor
 {

@@ -1,3 +1,4 @@
+using Busynet.Bar.Display;
 namespace Busynet.Bar.Layouts;
 
 public static class LimitsLayout

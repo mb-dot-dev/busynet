@@ -1,7 +1,8 @@
 using System.Text.Json.Nodes;
+using Busynet.Bar.Display;
 using Refit;
 
-namespace Busynet.Bar;
+namespace Busynet.Bar.Http;
 
 internal sealed class BarDisplay(IBusyBarApi api) : IBarDisplay
 {

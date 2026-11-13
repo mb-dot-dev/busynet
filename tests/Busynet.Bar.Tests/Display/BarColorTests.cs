@@ -1,3 +1,4 @@
+using Busynet.Bar.Display;
 namespace Busynet.Bar.Tests.Display;
 
 public sealed class BarColorTests

@@ -1,5 +1,7 @@
 using System.Reactive.Subjects;
 using Busynet.Bar;
+using Busynet.Bar.Display;
+using Busynet.Bar.Http;
 using Busynet.Bar.Buttons;
 
 namespace Busynet.Cli.Tests.Fakes;

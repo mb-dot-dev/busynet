@@ -1,4 +1,6 @@
-namespace Busynet.Bar;
+using Busynet.Bar.Display;
+
+namespace Busynet.Bar.Http;
 
 public interface IBarDisplay
 {

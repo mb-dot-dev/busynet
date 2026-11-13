@@ -1,3 +1,4 @@
+using Busynet.Bar.Display;
 using Busynet.Bar.Layouts;
 
 namespace Busynet.Bar.Tests.Layouts;

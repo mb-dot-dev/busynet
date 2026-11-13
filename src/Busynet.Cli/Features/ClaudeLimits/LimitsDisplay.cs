@@ -1,4 +1,6 @@
 using Busynet.Bar;
+using Busynet.Bar.Display;
+using Busynet.Bar.Http;
 using Busynet.Bar.Layouts;
 using Busynet.Core.Watching;
 
