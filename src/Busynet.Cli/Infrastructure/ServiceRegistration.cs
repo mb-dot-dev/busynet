@@ -1,12 +1,12 @@
 using System.Reactive.Concurrency;
 using Busynet.Bar;
 using Busynet.Claude;
+using Busynet.Cli.Features.ClaudeLimits;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
-using Spectre.Console.Cli;
 
 namespace Busynet.Cli.Infrastructure;
 
@@ -23,7 +23,7 @@ public static class ServiceRegistration
         services.AddClaude();
 
         services.TryAddSingleton<Verbosity>();
-        services.AddSingleton<ICommandInterceptor, VerbosityInterceptor>();
+        services.AddTransient<ClaudeLimitsCommand>();
         services.AddLogging(b =>
         {
             b.ClearProviders();
