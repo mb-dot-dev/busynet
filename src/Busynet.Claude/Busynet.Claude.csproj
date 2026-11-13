@@ -3,6 +3,8 @@
     <RootNamespace>Busynet.Claude</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Refit" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
     <ProjectReference Include="../Busynet.Core/Busynet.Core.csproj" />
   </ItemGroup>
 </Project>
