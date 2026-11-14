@@ -47,8 +47,9 @@ public static class BusynetApp
             var parse = root.Parse(args.Length == 0 ? ["--help"] : args, new ParserConfiguration { ResponseFileTokenReplacer = null });
             if (parse.Errors.Count > 0)
             {
+                // Not cancellable: a usage error is still reported after Ctrl+C.
                 foreach (var error in parse.Errors)
-                    await stderr.WriteLineAsync(Redact(error.Message, parse.UnmatchedTokens));
+                    await stderr.WriteLineAsync(Redact(error.Message, parse.UnmatchedTokens).AsMemory(), CancellationToken.None);
                 return ErrorHandler.UsageError;
             }
 
