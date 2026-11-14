@@ -9,11 +9,21 @@ currently available: `busynet claude limits`.
 
 ### Homebrew (macOS arm64, Linux x64)
 
-A native AOT build (no .NET runtime needed):
+Installs a prebuilt native AOT binary from the [mb-dot-dev/tap](https://github.com/mb-dot-dev/homebrew-tap) tap
+(no .NET runtime needed). Other platforms should use the .NET tool below.
 
 ```sh
 brew install mb-dot-dev/tap/busynet
 ```
+
+Upgrade or remove it:
+
+```sh
+brew update && brew upgrade busynet
+brew uninstall busynet
+```
+
+Each `vX.Y.Z` tag publishes a GitHub release and updates the formula automatically.
 
 ### .NET tool
 
