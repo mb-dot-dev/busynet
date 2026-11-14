@@ -10,6 +10,8 @@ public static class BkkServiceCollectionExtensions
 {
     internal const string HttpClientName = "bkk";
 
+    private static readonly Uri FutarBaseAddress = new UriBuilder(Uri.UriSchemeHttps, "futar.bkk.hu").Uri;
+
     public static IServiceCollection AddBkk(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -17,7 +19,7 @@ public static class BkkServiceCollectionExtensions
         // The API key is in the request URL: never let IHttpClientFactory log it.
         services.AddHttpClient(HttpClientName, c =>
         {
-            c.BaseAddress = new Uri("https://futar.bkk.hu");
+            c.BaseAddress = FutarBaseAddress;
             c.Timeout = FutarOptions.DefaultTimeout;
         }).RemoveAllLoggers();
 

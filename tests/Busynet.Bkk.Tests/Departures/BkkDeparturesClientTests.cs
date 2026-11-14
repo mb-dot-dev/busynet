@@ -155,7 +155,7 @@ public sealed class BkkDeparturesClientTests
 
         var e = await Assert.ThrowsAnyAsync<BkkException>(() => Create(fake).GetDeparturesAsync(Key, Stop, Ct));
 
-        Assert.IsNotAssignableFrom<ITransientFailure>(e);
+        Assert.IsNotType<ITransientFailure>(e, exactMatch: false);
         Assert.Equal("BKK rejected the API key in BKK_API_KEY.", e.Message);
     }
 
@@ -167,7 +167,7 @@ public sealed class BkkDeparturesClientTests
 
         var e = await Assert.ThrowsAnyAsync<BkkException>(() => Create(fake).GetDeparturesAsync(Key, "BKK_NOPE", Ct));
 
-        Assert.IsNotAssignableFrom<ITransientFailure>(e);
+        Assert.IsNotType<ITransientFailure>(e, exactMatch: false);
         Assert.Equal("Unknown BKK stop id: BKK_NOPE.", e.Message);
     }
 
@@ -176,7 +176,7 @@ public sealed class BkkDeparturesClientTests
     {
         var e = await Assert.ThrowsAnyAsync<BkkException>(() => Create(Responding(HttpStatusCode.BadRequest)).GetDeparturesAsync(Key, Stop, Ct));
 
-        Assert.IsNotAssignableFrom<ITransientFailure>(e);
+        Assert.IsNotType<ITransientFailure>(e, exactMatch: false);
         Assert.Equal("BKK API returned HTTP 400", e.Message);
     }
 
