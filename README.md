@@ -70,6 +70,9 @@ reset) and `wk 40% 6d` (weekly window). Press Ctrl+C to stop; the bar is cleared
 
 ## Development
 
+See [docs/architecture.md](docs/architecture.md) for how the app works inside (event pipeline, class and sequence
+diagrams).
+
 ```sh
 dotnet build -c Release -warnaserror
 dotnet test -c Release
