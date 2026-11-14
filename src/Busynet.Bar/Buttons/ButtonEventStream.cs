@@ -27,7 +27,10 @@ public static class ButtonEventStream
 
         return Observable.Create<ButtonEvent>(observer =>
             {
+                // Cancelled, not disposed: see the comment on the returned disposable.
+#pragma warning disable S2930
                 var cts = new CancellationTokenSource();
+#pragma warning restore S2930
                 var token = cts.Token;
                 var pending = new SerialDisposable();
                 var delay = InitialDelay;
@@ -36,31 +39,8 @@ public static class ButtonEventStream
 
                 async Task ListenAsync()
                 {
-                    string errorType;
-                    try
-                    {
-                        await foreach (var frame in frames(token).WithCancellation(token).ConfigureAwait(false))
-                        {
-                            delay = InitialDelay;
-                            foreach (var e in ButtonFrameDecoder.Decode(frame))
-                            {
-                                observer.OnNext(e);
-                            }
-                        }
-
-                        errorType = "Closed";
-                    }
-                    catch (Exception) when (token.IsCancellationRequested)
-                    {
-                        return;
-                    }
-                    catch (Exception ex)
-                    {
-                        // Type name only: a WebSocketException's message can carry the URL, and with it the token.
-                        errorType = ex.GetType().Name;
-                    }
-
-                    if (token.IsCancellationRequested)
+                    var errorType = await PumpAsync(frames, observer, () => delay = InitialDelay, token).ConfigureAwait(false);
+                    if (errorType is null || token.IsCancellationRequested)
                     {
                         return;
                     }
@@ -83,5 +63,40 @@ public static class ButtonEventStream
             })
             .Publish()
             .RefCount();
+    }
+
+    /// <summary>
+    /// Forwards the decoded events of one connection to <paramref name="observer"/>, calling
+    /// <paramref name="onFrame"/> per frame. Returns why the connection dropped ("Closed" or the exception's
+    /// type name), or <c>null</c> when it ended because <paramref name="token"/> was cancelled.
+    /// </summary>
+    private static async Task<string?> PumpAsync(
+        Func<CancellationToken, IAsyncEnumerable<byte[]>> frames,
+        IObserver<ButtonEvent> observer,
+        Action onFrame,
+        CancellationToken token)
+    {
+        try
+        {
+            await foreach (var frame in frames(token).WithCancellation(token).ConfigureAwait(false))
+            {
+                onFrame();
+                foreach (var e in ButtonFrameDecoder.Decode(frame))
+                {
+                    observer.OnNext(e);
+                }
+            }
+
+            return "Closed";
+        }
+        catch (Exception) when (token.IsCancellationRequested)
+        {
+            return null;
+        }
+        catch (Exception ex)
+        {
+            // Type name only: a WebSocketException's message can carry the URL, and with it the token.
+            return ex.GetType().Name;
+        }
     }
 }

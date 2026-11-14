@@ -31,12 +31,17 @@ public static class StatusSocket
     /// Connects, asks the bar to stream its state, and yields each complete binary message. Text messages
     /// are ignored. Ends when the server closes the socket; connection failures throw.
     /// </summary>
-    public static async IAsyncEnumerable<byte[]> ReadFramesAsync(
-        BarConnection connection,
-        [EnumeratorCancellation] CancellationToken ct)
+    public static IAsyncEnumerable<byte[]> ReadFramesAsync(BarConnection connection, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(connection);
 
+        return ReadFramesCoreAsync(connection, ct);
+    }
+
+    private static async IAsyncEnumerable<byte[]> ReadFramesCoreAsync(
+        BarConnection connection,
+        [EnumeratorCancellation] CancellationToken ct)
+    {
         using var socket = new ClientWebSocket();
         socket.Options.KeepAliveInterval = KeepAliveInterval;
         socket.Options.KeepAliveTimeout = KeepAliveTimeout;
@@ -59,7 +64,7 @@ public static class StatusSocket
                 throw new InvalidDataException("Status message too large.");
             }
 
-            message.Write(buffer, 0, result.Count);
+            await message.WriteAsync(buffer.AsMemory(0, result.Count), ct).ConfigureAwait(false);
             if (!result.EndOfMessage)
             {
                 continue;
