@@ -18,4 +18,14 @@ public sealed class DisplayTextTests
     [InlineData("hi\n")]
     public void TextElement_rejects_non_ascii_and_empty(string text) =>
         Assert.Throws<ArgumentException>(() => new TextElement("id", text, "small", 0, 0));
+
+    [Theory]
+    [InlineData("CI", "CI")]
+    [InlineData("🚀 Deploy", "Deploy")]
+    [InlineData("CI 🚀 Build", "CI Build")]
+    [InlineData("  a\tb  ", "ab")]
+    [InlineData("🚀", "")]
+    [InlineData("", "")]
+    public void StripUndisplayable_drops_and_collapses(string text, string expected) =>
+        Assert.Equal(expected, DisplayText.StripUndisplayable(text));
 }

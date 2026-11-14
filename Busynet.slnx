@@ -4,12 +4,14 @@
     <Project Path="src/Busynet.Claude/Busynet.Claude.csproj" />
     <Project Path="src/Busynet.Cli/Busynet.Cli.csproj" />
     <Project Path="src/Busynet.Core/Busynet.Core.csproj" />
+    <Project Path="src/Busynet.GitHub/Busynet.GitHub.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Busynet.Bar.Tests/Busynet.Bar.Tests.csproj" />
     <Project Path="tests/Busynet.Claude.Tests/Busynet.Claude.Tests.csproj" />
     <Project Path="tests/Busynet.Cli.Tests/Busynet.Cli.Tests.csproj" />
     <Project Path="tests/Busynet.Core.Tests/Busynet.Core.Tests.csproj" />
+    <Project Path="tests/Busynet.GitHub.Tests/Busynet.GitHub.Tests.csproj" />
     <Project Path="tests/Busynet.Testing/Busynet.Testing.csproj" />
   </Folder>
 </Solution>

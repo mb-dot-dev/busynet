@@ -1,6 +1,7 @@
 # busynet internals
 
-This page explains how busynet works inside, using `busynet claude limits` (the only command so far) as the example.
+This page explains how busynet works inside, using `busynet claude limits` as the main example. `busynet gh workflow`
+is built the same way; see [10. `gh workflow`](#10-gh-workflow).
 The diagrams are Mermaid, so they render on GitHub and in most Markdown previewers.
 
 - [1. The big picture](#1-the-big-picture)
@@ -12,6 +13,7 @@ The diagrams are Mermaid, so they render on GitHub and in most Markdown previewe
 - [7. Failures and exit codes](#7-failures-and-exit-codes)
 - [8. Concurrency notes](#8-concurrency-notes)
 - [9. Adding a new watch command](#9-adding-a-new-watch-command)
+- [10. `gh workflow`](#10-gh-workflow)
 
 ---
 
@@ -59,13 +61,16 @@ flowchart TB
     Cli["<b>Busynet.Cli</b><br/>Program, BusynetApp,<br/>commands, DI, error handling"]
     Bar["<b>Busynet.Bar</b><br/>BUSY Bar HTTP display,<br/>status WebSocket, layouts"]
     Claude["<b>Busynet.Claude</b><br/>credentials, usage API client"]
+    GitHub["<b>Busynet.GitHub</b><br/>token, Actions API client,<br/>local git checkout"]
     Core["<b>Busynet.Core</b><br/>Poller, DisplayWatch, IDisplay,<br/>process runner, exception base types"]
 
     Cli --> Bar
     Cli --> Claude
+    Cli --> GitHub
     Cli --> Core
     Bar --> Core
     Claude --> Core
+    GitHub --> Core
 
     subgraph External["External libraries"]
         Rx["System.Reactive"]
@@ -79,6 +84,7 @@ flowchart TB
     Bar -.-> Refit
     Bar -.-> PB
     Claude -.-> Refit
+    GitHub -.-> Refit
     Cli -.-> SCL
     Cli -.-> MEDI
 ```
@@ -86,9 +92,10 @@ flowchart TB
 | Project | Responsibility | Key types |
 | --- | --- | --- |
 | `Busynet.Core` | Generic watch loop, polling, retry classification, child processes | `DisplayWatch`, `Poller`, `IDisplay<T>`, `ITransientFailure`, `BusynetException`, `ProcessRunner` |
-| `Busynet.Bar` | Talking to the BUSY Bar: drawing, clearing, button events | `IBarFactory`, `IBarDisplay`, `ButtonEventStream`, `StatusSocket`, `LimitsLayout` |
+| `Busynet.Bar` | Talking to the BUSY Bar: drawing, clearing, asset upload, button events | `IBarFactory`, `IBarDisplay`, `ButtonEventStream`, `StatusSocket`, `LimitsLayout`, `WorkflowLayout` |
 | `Busynet.Claude` | Reading the Claude Code token and fetching usage | `IClaudeUsage`, `ClaudeUsageClient`, `ClaudeTokenSource` |
-| `Busynet.Cli` | Command line, DI wiring, the `claude limits` feature, exit codes | `BusynetApp`, `ClaudeLimitsCommand`, `ClaudeLimitsWatch`, `LimitsState`, `ErrorHandler` |
+| `Busynet.GitHub` | The GitHub token, workflow/run/pull request queries, the local checkout's branch and origin | `IGitHubActions`, `GitHubActionsClient`, `GitHubTokenSource`, `IGitCheckout` |
+| `Busynet.Cli` | Command line, DI wiring, the `claude limits` and `gh workflow` features, exit codes | `BusynetApp`, `ClaudeLimitsCommand`, `GitHubWorkflowCommand`, `DisplayWatch` callers, `ErrorHandler` |
 
 ---
 
@@ -940,3 +947,42 @@ flowchart LR
 
 DisplayWatch then provides the initial clear, deduplicated and serialised draws, transient-failure tolerance,
 cancellation, and the guaranteed clear on exit.
+
+---
+
+## 10. `gh workflow`
+
+`busynet gh workflow` is a second instance of the recipe above, with a single event source and no buttons.
+
+```mermaid
+flowchart LR
+    subgraph Startup["GitHubWorkflowCommand (once, any failure exits 1)"]
+        direction TB
+        R["--repo or git remote get-url origin"] --> BR["--branch or git rev-parse --abbrev-ref HEAD"]
+        BR --> W["ResolveWorkflowAsync<br/>GET .../actions/workflows<br/>(id, file name, then display name)"]
+        W --> UP["UploadIconsAsync<br/>6 x POST /api/assets/upload"]
+    end
+
+    subgraph Watch["GitHubWorkflowWatch"]
+        direction TB
+        P["Poller.Poll(fetch, interval,<br/>initialDelay: 0)"] --> F["fetch: latest run on the branch,<br/>then the open pull request"]
+        F --> U["Select: snap =#gt; s =#gt; s.WithSnapshot(snap)"]
+    end
+
+    UP --> P
+    U --> DW["DisplayWatch.RunAsync<br/>render: WorkflowState.Render()<br/>draw: WorkflowLayout"]
+```
+
+- **No seed fetch.** Unlike `claude limits`, the first poll runs as soon as the watch starts (`initialDelay: 0`), the
+  same as busyboy. `WorkflowState.Render()` returns `null` until a poll succeeds, so a transient failure at startup
+  leaves the bar cleared rather than ending the command.
+- **The token is read once.** `GitHubActionsClient` (a singleton) asks `IGitHubTokenSource` on its first request and
+  reuses the answer: `gh auth token`, else `$GITHUB_TOKEN`. Neither is a `GitHubAuthException` (exit 1).
+- **Failure classes mirror busyboy.** 401, and 403 without rate-limit evidence, are `GitHubAuthException` (fatal). 429,
+  and 403 with `Retry-After` or `x-ratelimit-remaining: 0`, are `GitHubTransientException` carrying `RetryAfter`. 5xx,
+  transport failures and bodies of the wrong shape are transient; other 4xx are a fatal `GitHubException`.
+- **Value-equal views.** `WorkflowStatus(RepoLabel, RefLabel, Icon)` is a record, so `DisplayWatch` skips redraws that
+  would restart the repository row's scroll animation, which was confirmed on a real bar.
+- **Icons are embedded.** The six 12x12 PNGs are embedded resources of `Busynet.Bar` (`WorkflowIcons`), uploaded
+  unconditionally at startup because the bar has no endpoint that lists an application's assets.
+

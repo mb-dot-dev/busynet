@@ -15,4 +15,17 @@ public static class DisplayText
             }
         });
     }
+
+    /// <summary>
+    /// Drops every character outside printable ASCII and collapses the leftover whitespace. Unlike
+    /// <see cref="ToDisplayableAscii"/> this may return an empty string, so it is only for one part of a text
+    /// whose other parts keep it non-empty: <c>"🚀 Deploy"</c> becomes <c>"Deploy"</c> rather than <c>"? Deploy"</c>.
+    /// </summary>
+    public static string StripUndisplayable(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        var kept = new string([.. text.Where(c => c is >= ' ' and <= '~')]);
+        return string.Join(' ', kept.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+    }
 }

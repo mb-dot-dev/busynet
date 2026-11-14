@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Reflection;
 using Busynet.Cli.Features.ClaudeLimits;
+using Busynet.Cli.Features.GitHubWorkflow;
 using Busynet.Cli.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -90,6 +91,10 @@ public static class BusynetApp
         var claude = new Command("claude", "Claude Code on the bar.");
         claude.Subcommands.Add(ClaudeLimitsCommand.Define(provider));
         root.Subcommands.Add(claude);
+
+        var gh = new Command("gh", "GitHub on the bar.");
+        gh.Subcommands.Add(GitHubWorkflowCommand.Define(provider));
+        root.Subcommands.Add(gh);
         return root;
     }
 

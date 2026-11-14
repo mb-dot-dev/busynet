@@ -65,7 +65,7 @@ jobs:
           /k:"mb-dot-dev_busynet"
           /o:"mb-dot-dev"
           /d:sonar.token="$SONAR_TOKEN"
-          /d:sonar.cs.vscoveragexml.reportsPaths="**/TestResults/**/coverage.xml"
+          /d:sonar.cs.vscoveragexml.reportsPaths="TestResults/merged/*.xml"
           /d:sonar.coverage.exclusions="tests/**"
           /d:sonar.qualitygate.wait=true
 
@@ -75,7 +75,7 @@ jobs:
       - name: Test
         run: >
           dotnet test -c Release --no-build
-          --coverage --coverage-output-format xml --coverage-output coverage.xml
+          --coverage --coverage-output-format xml --results-directory TestResults
 
       - name: End analysis
         env:
@@ -106,6 +106,7 @@ jobs:
           test "$(./tool/busynet --version)" = "0.1.0"
           ./tool/busynet --help
           ./tool/busynet claude limits --help
+          ./tool/busynet gh workflow --help
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -135,3 +136,4 @@ jobs:
         run: |
           ./aot/busynet --help
           ./aot/busynet claude limits --help
+          ./aot/busynet gh workflow --help

@@ -3,7 +3,7 @@
 Console application to display various information on a [BUSY Bar](https://busy.bar), written in .NET.
 
 A port of [busyboy](https://github.com/mb-dot-dev/busyboy) (Python). Commands are being ported one at a time;
-currently available: `busynet claude limits`.
+currently available: `busynet claude limits` and `busynet gh workflow`.
 
 ## Install
 
@@ -60,6 +60,18 @@ busynet claude limits [--interval <seconds>] [--host <host>] [--token <token>] [
 Shows your Claude usage limits on the bar and refreshes them every `--interval` seconds (default 180). Pressing the
 Start button toggles between the 5-hour and weekly limits. Labels look like `5h 85% 3h49m` (5-hour window: percent used, time until
 reset) and `wk 40% 6d` (weekly window). Press Ctrl+C to stop; the bar is cleared on exit.
+
+```sh
+busynet gh workflow <WORKFLOW> [--branch <branch>] [--repo <owner/name>] [--interval <seconds>]
+                               [--host <host>] [--token <token>] [--verbose]
+```
+
+Watches a GitHub Actions workflow and shows its latest run on the bar, polling every `--interval` seconds (default
+10). `WORKFLOW` is a workflow id, file name (`ci.yaml`) or display name (`CI`). The top row shows the repository; the
+bottom row shows the open pull request (`#12 CI`), or the branch when there is none (`main CI`); a status icon matching
+GitHub's own sits to the left. `--branch` and `--repo` default to the current checkout's branch and its `origin`
+remote. The GitHub token comes from the `gh` CLI (`gh auth login`), else from `GITHUB_TOKEN`. Press Ctrl+C to stop;
+the bar is cleared on exit.
 
 ## CLI contract
 

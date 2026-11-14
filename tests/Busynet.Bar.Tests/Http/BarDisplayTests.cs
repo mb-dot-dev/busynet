@@ -188,4 +188,32 @@ public sealed class BarDisplayTests
         Assert.Equal("request error | POST /api/display/draw | TaskCanceledException", ex.Message);
         Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(2), $"took {stopwatch.Elapsed}");
     }
+
+    [Fact]
+    public async Task Upload_posts_raw_bytes_scoped_to_application()
+    {
+        var fake = new FakeHttpHandler();
+        fake.Add(HttpMethod.Post, "/api/assets/upload", HttpStatusCode.OK, """{"result":"OK"}""");
+
+        await Create(fake, "tok").UploadAssetAsync("success.png", "abc"u8.ToArray(), TestContext.Current.CancellationToken);
+
+        var call = Assert.Single(fake.Calls);
+        Assert.Contains("application_name=busynet", call.Uri.Query);
+        Assert.Contains("file=success.png", call.Uri.Query);
+        Assert.Equal("application/octet-stream", call.Headers["Content-Type"]);
+        Assert.Equal("tok", call.Headers["X-API-Token"]);
+        Assert.Equal("abc", call.Body);
+    }
+
+    [Fact]
+    public async Task Upload_error_names_the_upload_path()
+    {
+        var fake = new FakeHttpHandler();
+        fake.Add(HttpMethod.Post, "/api/assets/upload", HttpStatusCode.BadRequest, """{"error":"bad file"}""");
+
+        var e = await Assert.ThrowsAsync<BarApiException>(() =>
+            Create(fake).UploadAssetAsync("x.png", "abc"u8.ToArray(), TestContext.Current.CancellationToken));
+
+        Assert.Equal("HTTP 400 | POST /api/assets/upload | bad file", e.Message);
+    }
 }

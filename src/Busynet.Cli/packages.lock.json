@@ -118,6 +118,14 @@
           "System.Reactive": "[7.0.0, )"
         }
       },
+      "busynet.github": {
+        "type": "Project",
+        "dependencies": {
+          "Busynet.Core": "[1.0.0, )",
+          "Microsoft.Extensions.Http": "[11.0.0, )",
+          "Refit": "[16.4.0, )"
+        }
+      },
       "Google.Protobuf": {
         "type": "CentralTransitive",
         "requested": "[3.36.2, )",
