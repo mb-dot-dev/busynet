@@ -13,6 +13,8 @@ public static class GitHubServiceCollectionExtensions
 {
     internal const string HttpClientName = "github";
 
+    private static readonly Uri ApiBaseAddress = new UriBuilder(Uri.UriSchemeHttps, "api.github.com").Uri;
+
     public static IServiceCollection AddGitHub(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -20,7 +22,7 @@ public static class GitHubServiceCollectionExtensions
         // The Authorization header carries the token: never let IHttpClientFactory log it.
         services.AddHttpClient(HttpClientName, c =>
         {
-            c.BaseAddress = new Uri("https://api.github.com");
+            c.BaseAddress = ApiBaseAddress;
             c.Timeout = GitHubActionsOptions.DefaultTimeout;
         }).RemoveAllLoggers();
 

@@ -12,6 +12,11 @@ internal sealed class GitHubActionsClient(IGitHubTokenSource tokens, IGitHubApi 
 {
     private const double MaxRetryAfterSeconds = 3600;
 
+    // What each request reads, as named in messages.
+    private const string WorkflowsRequest = "workflows";
+    private const string RunsRequest = "runs";
+    private const string PullsRequest = "pulls";
+
     private readonly SemaphoreSlim _tokenGate = new(1, 1);
     private string? _token;
 
@@ -20,10 +25,10 @@ internal sealed class GitHubActionsClient(IGitHubTokenSource tokens, IGitHubApi 
         ArgumentNullException.ThrowIfNull(repo);
         ArgumentNullException.ThrowIfNull(reference);
 
-        var root = await GetAsync("workflows", repo, (token, ct) => api.GetWorkflowsAsync(token, repo.Owner, repo.Name, ct), ct);
+        var root = await GetAsync(WorkflowsRequest, repo, (token, ct) => api.GetWorkflowsAsync(token, repo.Owner, repo.Name, ct), ct);
         if (root is not JsonObject { } obj || obj["workflows"] is not JsonArray items)
-            throw Unexpected("workflows", repo);
-        var workflows = items.Select(item => ParseWorkflow(item) ?? throw Unexpected("workflows", repo)).ToList();
+            throw Unexpected(WorkflowsRequest, repo);
+        var workflows = items.Select(item => ParseWorkflow(item) ?? throw Unexpected(WorkflowsRequest, repo)).ToList();
 
         // GitHub's own runs endpoint accepts only an id or a file name; the display name is resolved here too.
         return workflows.FirstOrDefault(w =>
@@ -38,11 +43,11 @@ internal sealed class GitHubActionsClient(IGitHubTokenSource tokens, IGitHubApi 
         ArgumentNullException.ThrowIfNull(repo);
         ArgumentNullException.ThrowIfNull(branch);
 
-        var root = await GetAsync("runs", repo,
+        var root = await GetAsync(RunsRequest, repo,
             (token, ct) => api.GetRunsAsync(token, repo.Owner, repo.Name, workflowId, branch, ct), ct);
         if (root is not JsonObject { } obj || obj["workflow_runs"] is not JsonArray runs)
-            throw Unexpected("runs", repo);
-        return runs.Count == 0 ? null : ParseRun(runs[0]) ?? throw Unexpected("runs", repo);
+            throw Unexpected(RunsRequest, repo);
+        return runs.Count == 0 ? null : ParseRun(runs[0]) ?? throw Unexpected(RunsRequest, repo);
     }
 
     public async Task<int?> GetPullRequestNumberAsync(GitHubRepo repo, string branch, CancellationToken ct)
@@ -50,15 +55,15 @@ internal sealed class GitHubActionsClient(IGitHubTokenSource tokens, IGitHubApi 
         ArgumentNullException.ThrowIfNull(repo);
         ArgumentNullException.ThrowIfNull(branch);
 
-        var root = await GetAsync("pulls", repo,
+        var root = await GetAsync(PullsRequest, repo,
             (token, ct) => api.GetPullRequestsAsync(token, repo.Owner, repo.Name, $"{repo.Owner}:{branch}", ct), ct);
         if (root is not JsonArray pulls)
-            throw Unexpected("pulls", repo);
+            throw Unexpected(PullsRequest, repo);
         if (pulls.Count == 0)
             return null;
         return pulls[0] is JsonObject pull && Number(pull["number"]) is { } number and >= 0 and <= int.MaxValue
             ? (int)number
-            : throw Unexpected("pulls", repo);
+            : throw Unexpected(PullsRequest, repo);
     }
 
     private static Workflow? ParseWorkflow(JsonNode? node) =>

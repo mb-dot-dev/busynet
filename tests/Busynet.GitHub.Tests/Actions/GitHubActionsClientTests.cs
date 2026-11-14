@@ -89,7 +89,7 @@ public sealed class GitHubActionsClientTests
             Create(Responding(WorkflowsPath, HttpStatusCode.OK, Workflows)).ResolveWorkflowAsync(Repo, "nightly", Ct));
 
         Assert.Equal("No workflow matches 'nightly' in mb-dot-dev/busynet. Available: CI, Release", e.Message);
-        Assert.IsNotAssignableFrom<ITransientFailure>(e);
+        Assert.IsNotType<ITransientFailure>(e, exactMatch: false);
     }
 
     [Fact]
@@ -258,7 +258,7 @@ public sealed class GitHubActionsClientTests
         var e = await Assert.ThrowsAnyAsync<GitHubException>(() =>
             Create(Responding(WorkflowsPath, HttpStatusCode.NotFound)).ResolveWorkflowAsync(Repo, "CI", Ct));
 
-        Assert.IsNotAssignableFrom<ITransientFailure>(e);
+        Assert.IsNotType<ITransientFailure>(e, exactMatch: false);
         Assert.IsNotType<GitHubAuthException>(e);
         Assert.Equal("GitHub returned HTTP 404 for the workflows of mb-dot-dev/busynet", e.Message);
     }

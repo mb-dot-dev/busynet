@@ -86,7 +86,8 @@ public sealed class GitHubWorkflowOptions
         ArgumentNullException.ThrowIfNull(result);
 
         var bar = _bar.Read(result);
-        GitHubRepo.TryParse(result.GetValue(Repo), out var repo);
+        // Validated while parsing: a value that does not parse is absent.
+        var repo = GitHubRepo.TryParse(result.GetValue(Repo), out var parsed) ? parsed : null;
         return new GitHubWorkflowSettings(
             bar.Host,
             bar.Token,

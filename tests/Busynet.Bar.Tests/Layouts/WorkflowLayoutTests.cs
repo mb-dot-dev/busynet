@@ -55,4 +55,8 @@ public sealed class WorkflowLayoutTests
         foreach (var icon in WorkflowIcons.All)
             Assert.Equal([0x89, (byte)'P', (byte)'N', (byte)'G'], WorkflowIcons.Read(icon)[..4]);
     }
+
+    [Fact]
+    public void Undefined_icon_is_rejected() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => WorkflowIcons.FileName((WorkflowIcon)99));
 }

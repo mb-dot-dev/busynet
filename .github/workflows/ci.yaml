@@ -65,7 +65,7 @@ jobs:
           /k:"mb-dot-dev_busynet"
           /o:"mb-dot-dev"
           /d:sonar.token="$SONAR_TOKEN"
-          /d:sonar.cs.vscoveragexml.reportsPaths="**/TestResults/**/coverage.xml"
+          /d:sonar.cs.vscoveragexml.reportsPaths="TestResults/merged/*.xml"
           /d:sonar.coverage.exclusions="tests/**"
           /d:sonar.qualitygate.wait=true
 
@@ -75,7 +75,7 @@ jobs:
       - name: Test
         run: >
           dotnet test -c Release --no-build
-          --coverage --coverage-output-format xml --coverage-output coverage.xml
+          --coverage --coverage-output-format xml --results-directory TestResults
 
       - name: End analysis
         env:

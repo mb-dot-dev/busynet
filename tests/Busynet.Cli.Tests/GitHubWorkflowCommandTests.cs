@@ -99,6 +99,8 @@ public class GitHubWorkflowCommandTests
 
     [Theory]
     [InlineData("gh", "workflow")]
+    [InlineData("gh", "workflow", " ")]
+    [InlineData("gh", "workflow", "CI", "--branch", " ")]
     [InlineData("gh", "workflow", "CI", "--interval", "0")]
     [InlineData("gh", "workflow", "CI", "--bogus")]
     [InlineData("gh")]
@@ -182,6 +184,32 @@ public class GitHubWorkflowCommandTests
         Assert.Equal(1, exit);
         Assert.Equal("GitHub rejected the token (HTTP 401)." + Environment.NewLine, app.Stderr.ToString());
         Assert.Equal(FakeBarDisplay.Clear, bar.Display.Calls[^1]);
+    }
+
+    [Fact]
+    public async Task Invalid_host_variable_exits_1_naming_it()
+    {
+        using var app = new AppHarness(new Dictionary<string, string> { ["BUSYBOY_HOST"] = "http://[bad" });
+        app.Services.AddSingleton<IGitHubActions>(new FakeGitHubActions());
+        app.Services.AddSingleton<IGitCheckout>(new FakeGitCheckout());
+
+        var exit = await app.RunAsync("gh", "workflow", "CI");
+
+        Assert.Equal(1, exit);
+        Assert.Equal("BUSYBOY_HOST is not a valid host." + Environment.NewLine, app.Stderr.ToString());
+    }
+
+    [Fact]
+    public async Task Invalid_token_variable_exits_1_without_echoing_it()
+    {
+        using var app = new AppHarness(new Dictionary<string, string> { ["BUSYBOY_TOKEN"] = "bad\ntoken" });
+        app.Services.AddSingleton<IGitHubActions>(new FakeGitHubActions());
+        app.Services.AddSingleton<IGitCheckout>(new FakeGitCheckout());
+
+        var exit = await app.RunAsync("gh", "workflow", "CI");
+
+        Assert.Equal(1, exit);
+        Assert.Equal("BUSYBOY_TOKEN is not a valid token." + Environment.NewLine, app.Stderr.ToString());
     }
 
     [Fact]
