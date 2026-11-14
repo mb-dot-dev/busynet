@@ -3,7 +3,9 @@ using Busynet.Cli.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
 // Not disposed: Ctrl+C may still arrive while the process exits.
+#pragma warning disable S2930
 var cts = new CancellationTokenSource();
+#pragma warning restore S2930
 Console.CancelKeyPress += (_, e) =>
 {
     // The first Ctrl+C stops the command cleanly (clearing the bar); a second one is left to kill the process.

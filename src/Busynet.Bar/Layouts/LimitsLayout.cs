@@ -12,7 +12,9 @@ public static class LimitsLayout
     {
         ArgumentNullException.ThrowIfNull(gauge);
 
-        var fillColor = gauge.FillWidth == 0 ? TrackColor : gauge.High ? HighColor : NormalColor;
+        var fillColor = gauge.High ? HighColor : NormalColor;
+        if (gauge.FillWidth == 0)
+            fillColor = TrackColor;
 
         return new DisplayElements(
             BarApplication.Name,

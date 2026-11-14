@@ -58,7 +58,7 @@ public static class DisplayWatch
                     }
                     catch (Exception e) when (TransientFailure.IsTransient(e, out _))
                     {
-                        logger.LogDebug("Draw failed, will retry on the next update: {Error}", e.Message);
+                        logger.LogDebug(e, "Draw failed, will retry on the next update");
                     }
                     finally
                     {
@@ -90,7 +90,7 @@ public static class DisplayWatch
         }
         catch (Exception e)
         {
-            logger.LogDebug("Clearing the display on exit failed: {Error}", e.Message);
+            logger.LogDebug(e, "Clearing the display on exit failed");
         }
     }
 }

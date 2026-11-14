@@ -48,7 +48,7 @@ public static class BusynetApp
             if (parse.Errors.Count > 0)
             {
                 foreach (var error in parse.Errors)
-                    stderr.WriteLine(Redact(error.Message, parse.UnmatchedTokens));
+                    await stderr.WriteLineAsync(Redact(error.Message, parse.UnmatchedTokens));
                 return ErrorHandler.UsageError;
             }
 

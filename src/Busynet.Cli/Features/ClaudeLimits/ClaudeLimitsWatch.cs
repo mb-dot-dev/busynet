@@ -17,6 +17,8 @@ public static class ClaudeLimitsWatch
     /// failures keep the display; a <see cref="Busynet.Claude.ClaudeAuthException"/> ends the watch (rethrown
     /// after clearing). Returns normally when <paramref name="cancellationToken"/> is cancelled.
     /// </summary>
+    // Every parameter is a seam the tests drive (virtual clock, scripted usage, fake display, button subject).
+#pragma warning disable S107
     public static Task RunAsync(
         Usage seed,
         IClaudeUsage usage,
@@ -26,6 +28,7 @@ public static class ClaudeLimitsWatch
         IScheduler scheduler,
         ILogger logger,
         CancellationToken cancellationToken)
+#pragma warning restore S107
     {
         ArgumentNullException.ThrowIfNull(seed);
         ArgumentNullException.ThrowIfNull(usage);
