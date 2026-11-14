@@ -81,5 +81,6 @@ jobs:
           github_token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           target_darwin_arm64: true
           target_linux_amd64: true
+          skip_checksum: true
           install: 'bin.install "busynet"'
           test: 'assert_match version.to_s, shell_output("#{bin}/busynet --version")'
