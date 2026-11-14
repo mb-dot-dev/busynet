@@ -7,14 +7,14 @@ Status: draft
 
 Show the next buses leaving one predefined Budapest public-transport stop on the BUSY Bar, so a glance at the bar
 says whether it is time to walk to the stop. The user's stop is Kötő utca in Budaörs, platform towards Budapest
-(`BKK_F04808`); the command takes the stop id as an argument, so it is not hardcoded.
+(`BKK_F04808`). The command takes an optional stop id argument and defaults to `BKK_F04808` when none is given.
 
 Data comes from BKK's FUTÁR API (<https://opendata.bkk.hu/docs/futar-openapi.yaml>), which gives live predictions
 for tracked vehicles and timetable times otherwise.
 
 ## Goals
 
-- `busynet bkk departures <STOP_ID>` shows the **next 3 departures** from the stop, **rotating** one per frame.
+- `busynet bkk departures [STOP_ID]` shows the **next 3 departures** from the stop, **rotating** one per frame.
 - Each frame says **which of the 3** it is: `1.`, `2.`, `3.`.
 - Each frame shows the line, the time and the destination.
 - Time is **minutes until departure**; a departure **more than an hour away** shows its **clock time** instead.
@@ -61,7 +61,7 @@ justify generated code.
 ## Behaviour (decided with the user)
 
 ```sh
-busynet bkk departures <STOP_ID> [--interval <seconds>] [--rotate <seconds>] [--host <host>] [--token <token>] [--verbose]
+busynet bkk departures [STOP_ID] [--interval <seconds>] [--rotate <seconds>] [--host <host>] [--token <token>] [--verbose]
 ```
 
 Frame for departure *n* of up to 3:
@@ -73,16 +73,18 @@ Frame for departure *n* of up to 3:
 └────────────────────────────┘
 ```
 
+- **Stop:** `STOP_ID` is optional; without it the stop is `BKK_F04808` (Kötő utca, towards Budapest). *(User-decided.)*
+  An empty or whitespace value is a usage error (exit 2).
 - **Position:** `1.`, `2.`, `3.` — the departure's rank in the current list.
 - **Time:** whole minutes until departure, `17'`; `0'` when it is due now (under a minute). From 60 minutes away,
   the clock time `00:04` (local time, 24h). *(User-decided: minutes, clock time over an hour away.)*
 
 ## Design calls left open by the user (proposed, correctable)
 
-- **Command name:** `busynet bkk departures <STOP_ID>`, a new `bkk` group next to `claude` and `gh`.
+- **Command name:** `busynet bkk departures [STOP_ID]`, a new `bkk` group next to `claude` and `gh`.
 - **API key:** environment variable `BKK_API_KEY` only — no `--key` option, so the key never sits in shell history
   or `ps`. Missing → configuration error, exit 1, message names the variable. Usage example in the README:
-  `BKK_API_KEY=$(op read "op://…") busynet bkk departures BKK_F04808`.
+  `BKK_API_KEY=$(op read "op://…") busynet bkk departures`.
 - **Timetable-only marker:** a departure without `predictedDepartureTime` shows `~` before its time (`~17'`,
   `~00:04`). Live ones show no marker.
 - **Timings:** `--rotate` (default 5 s) per frame; `--interval` (default 30 s) between API polls; both ≥ 1.
