@@ -7,6 +7,16 @@ currently available: `busynet claude limits`.
 
 ## Install
 
+### Homebrew (macOS arm64, Linux x64)
+
+A native AOT build (no .NET runtime needed):
+
+```sh
+brew install mb-dot-dev/tap/busynet
+```
+
+### .NET tool
+
 busynet is packaged as a .NET tool and is not published to NuGet. Pack it locally and install from the folder:
 
 ```sh
