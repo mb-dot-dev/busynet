@@ -1,7 +1,7 @@
 # busynet — `bkk departures` (design)
 
 Date: 2026-11-14
-Status: draft
+Status: approved 2026-11-14
 
 ## Intent
 
