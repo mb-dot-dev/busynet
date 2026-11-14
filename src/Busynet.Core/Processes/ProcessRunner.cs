@@ -11,20 +11,12 @@ public sealed class ProcessRunner : IProcessRunner
         TimeSpan timeout,
         CancellationToken cancellationToken)
     {
-        var startInfo = new ProcessStartInfo(fileName, arguments)
-        {
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            // Required by the capture API; the content is never used or surfaced.
-            RedirectStandardError = true,
-        };
-
         using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutSource.CancelAfter(timeout);
 
         try
         {
-            var result = await Process.RunAndCaptureTextAsync(startInfo, timeoutSource.Token);
+            var result = await Process.RunAndCaptureTextAsync(fileName, arguments, timeoutSource.Token);
             if (result.ExitStatus.Canceled)
             {
                 cancellationToken.ThrowIfCancellationRequested();
