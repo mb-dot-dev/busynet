@@ -62,15 +62,18 @@ flowchart TB
     Bar["<b>Busynet.Bar</b><br/>BUSY Bar HTTP display,<br/>status WebSocket, layouts"]
     Claude["<b>Busynet.Claude</b><br/>credentials, usage API client"]
     GitHub["<b>Busynet.GitHub</b><br/>token, Actions API client,<br/>local git checkout"]
+    Bkk["<b>Busynet.Bkk</b><br/>BKK FUTÁR departures client"]
     Core["<b>Busynet.Core</b><br/>Poller, DisplayWatch, IDisplay,<br/>process runner, exception base types"]
 
     Cli --> Bar
     Cli --> Claude
     Cli --> GitHub
+    Cli --> Bkk
     Cli --> Core
     Bar --> Core
     Claude --> Core
     GitHub --> Core
+    Bkk --> Core
 
     subgraph External["External libraries"]
         Rx["System.Reactive"]
@@ -85,6 +88,7 @@ flowchart TB
     Bar -.-> PB
     Claude -.-> Refit
     GitHub -.-> Refit
+    Bkk -.-> Refit
     Cli -.-> SCL
     Cli -.-> MEDI
 ```
@@ -92,10 +96,11 @@ flowchart TB
 | Project | Responsibility | Key types |
 | --- | --- | --- |
 | `Busynet.Core` | Generic watch loop, polling, retry classification, child processes | `DisplayWatch`, `Poller`, `IDisplay<T>`, `ITransientFailure`, `BusynetException`, `ProcessRunner` |
-| `Busynet.Bar` | Talking to the BUSY Bar: drawing, clearing, asset upload, button events | `IBarFactory`, `IBarDisplay`, `ButtonEventStream`, `StatusSocket`, `LimitsLayout`, `WorkflowLayout` |
+| `Busynet.Bar` | Talking to the BUSY Bar: drawing, clearing, asset upload, button events | `IBarFactory`, `IBarDisplay`, `ButtonEventStream`, `StatusSocket`, `LimitsLayout`, `WorkflowLayout`, `DeparturesLayout` |
 | `Busynet.Claude` | Reading the Claude Code token and fetching usage | `IClaudeUsage`, `ClaudeUsageClient`, `ClaudeTokenSource` |
 | `Busynet.GitHub` | The GitHub token, workflow/run/pull request queries, the local checkout's branch and origin | `IGitHubActions`, `GitHubActionsClient`, `GitHubTokenSource`, `IGitCheckout` |
-| `Busynet.Cli` | Command line, DI wiring, the `claude limits` and `gh workflow` features, exit codes | `BusynetApp`, `ClaudeLimitsCommand`, `GitHubWorkflowCommand`, `DisplayWatch` callers, `ErrorHandler` |
+| `Busynet.Bkk` | Upcoming departures from a BKK stop via the FUTÁR API | `IBkkDepartures`, `BkkDeparturesClient`, `IFutarApi` |
+| `Busynet.Cli` | Command line, DI wiring, the `claude limits`, `gh workflow` and `bkk departures` features, exit codes | `BusynetApp`, `ClaudeLimitsCommand`, `GitHubWorkflowCommand`, `BkkDeparturesCommand`, `DisplayWatch` callers, `ErrorHandler` |
 
 ---
 
@@ -986,3 +991,39 @@ flowchart LR
 - **Icons are embedded.** The six 12x12 PNGs are embedded resources of `Busynet.Bar` (`WorkflowIcons`), uploaded
   unconditionally at startup because the bar has no endpoint that lists an application's assets.
 
+---
+
+## 11. `bkk departures`
+
+`busynet bkk departures` is the third instance of the recipe, with two event sources: the poll and a rotation tick.
+
+```mermaid
+flowchart LR
+    subgraph Startup["BkkDeparturesCommand (once)"]
+        direction TB
+        K["$BKK_API_KEY<br/>(missing: exit 1, bar untouched)"] --> C["BarConnector.Connect"]
+    end
+
+    subgraph Watch["BkkDeparturesWatch"]
+        direction TB
+        P["Poller.Poll(fetch, interval,<br/>initialDelay: 0)"] --> F["GET .../arrivals-and-departures-for-stop.json<br/>?key&amp;stopId&amp;minutesAfter=180"]
+        F --> U1["s =#gt; s.WithSnapshot(list)"]
+        T["Observable.Interval(rotate)"] --> U2["s =#gt; s.Advance()"]
+    end
+
+    C --> P
+    C --> T
+    U1 --> DW["DisplayWatch.RunAsync<br/>render: DeparturesState.Render(now, zone)<br/>draw: DeparturesLayout"]
+    U2 --> DW
+```
+
+- **Rotation survives polls.** `DeparturesState(Snapshot, Index)` keeps one counter; a poll replaces the list and the
+  next tick shows position `Index % count` of it, so a shrinking list never indexes out of range.
+- **Rendered from the clock.** `Render` takes `scheduler.Now`: minutes count down between polls, and a departure that
+  has left drops out at once. The value-equal `DepartureFrame` means a one-departure list redraws only when its
+  minute changes.
+- **The key is in the URL.** FUTÁR takes it as `?key=`, so the `bkk` HTTP client never logs, and transport failures
+  are reported by exception type only. 401/403 (rejected key) and 404 (unknown stop) are fatal `BkkException`s; 429,
+  5xx, transport failures and malformed bodies are `BkkTransientException`s.
+- **Text.** Headsigns are transliterated (`DisplayText.Transliterate`: `Kőbánya` becomes `Kobanya`, `►` becomes `>`)
+  before the layout's printable-ASCII check.

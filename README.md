@@ -3,7 +3,7 @@
 Console application to display various information on a [BUSY Bar](https://busy.bar), written in .NET.
 
 A port of [busyboy](https://github.com/mb-dot-dev/busyboy) (Python). Commands are being ported one at a time;
-currently available: `busynet claude limits` and `busynet gh workflow`.
+currently available: `busynet claude limits`, `busynet gh workflow` and `busynet bkk departures`.
 
 ## Install
 
@@ -47,6 +47,7 @@ dotnet tool uninstall --global busynet
 | ---------------- | --------- | -------------------- | ------------ |
 | BUSY Bar host    | `--host`  | `BUSYBOY_HOST`       | `10.0.4.20` |
 | BUSY Bar token   | `--token` | `BUSYBOY_TOKEN`      | none (optional) |
+| BKK API key      | none      | `BKK_API_KEY`        | none (required by `bkk departures`) |
 
 The environment variable names match busyboy's on purpose, so both tools can share one configuration.
 Command-line options override environment variables.
@@ -72,6 +73,24 @@ bottom row shows the open pull request (`#12 CI`), or the branch when there is n
 GitHub's own sits to the left. `--branch` and `--repo` default to the current checkout's branch and its `origin`
 remote. The GitHub token comes from the `gh` CLI (`gh auth login`), else from `GITHUB_TOKEN`. Press Ctrl+C to stop;
 the bar is cleared on exit.
+
+```sh
+busynet bkk departures [STOP_ID] [--interval <seconds>] [--rotate <seconds>]
+                       [--host <host>] [--token <token>] [--verbose]
+```
+
+Rotates the next 3 departures from a Budapest public-transport stop on the bar, one every `--rotate` seconds
+(default 5), polling the [BKK FUTÁR API](https://opendata.bkk.hu) every `--interval` seconds (default 30). `STOP_ID`
+defaults to `BKK_F04808` (Kötő utca, Budaörs, towards Budapest). The top row shows the position, line and time
+(`1. 922 17'`); the bottom row shows the destination. Times are minutes until departure, or the clock time once a
+departure is an hour or more away; a `~` marks a timetable time with no live prediction. The API key is read from
+`BKK_API_KEY` only, so it never lands in shell history:
+
+```sh
+BKK_API_KEY=$(op read "op://<vault>/<item>/<field>") busynet bkk departures
+```
+
+Press Ctrl+C to stop; the bar is cleared on exit.
 
 ## CLI contract
 

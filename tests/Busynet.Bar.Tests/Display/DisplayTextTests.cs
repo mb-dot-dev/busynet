@@ -28,4 +28,13 @@ public sealed class DisplayTextTests
     [InlineData("", "")]
     public void StripUndisplayable_drops_and_collapses(string text, string expected) =>
         Assert.Equal(expected, DisplayText.StripUndisplayable(text));
+
+    [Theory]
+    [InlineData("Kőbánya alsó vasútállomás", "Kobanya also vasutallomas")]
+    [InlineData("Astoria M ► Budakeszi", "Astoria M > Budakeszi")]
+    [InlineData("Törökbálint, Márta utca", "Torokbalint, Marta utca")]
+    [InlineData("ŐRSÉG Ű", "ORSEG U")]
+    [InlineData("🚌", "")]
+    public void Transliterate_strips_hungarian_accents(string text, string expected) =>
+        Assert.Equal(expected, DisplayText.Transliterate(text));
 }

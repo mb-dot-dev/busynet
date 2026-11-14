@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+
 namespace Busynet.Bar.Display;
 
 public static class DisplayText
@@ -27,5 +30,25 @@ public static class DisplayText
 
         var kept = new string([.. text.Where(c => c is >= ' ' and <= '~')]);
         return string.Join(' ', kept.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    /// <summary>
+    /// Folds accented letters to their base letter (<c>"Kőbánya"</c> becomes <c>"Kobanya"</c>) and arrows to
+    /// <c>&gt;</c>, then <see cref="StripUndisplayable"/>s the rest. May return an empty string.
+    /// </summary>
+    public static string Transliterate(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        var builder = new StringBuilder(text.Length);
+        foreach (var c in text.Normalize(NormalizationForm.FormD))
+        {
+            if (c is '\u25BA' or '\u25B6')
+                builder.Append('>');
+            else if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                builder.Append(c);
+        }
+
+        return StripUndisplayable(builder.ToString());
     }
 }
