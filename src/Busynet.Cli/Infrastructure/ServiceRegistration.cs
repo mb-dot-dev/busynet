@@ -2,6 +2,8 @@ using System.Reactive.Concurrency;
 using Busynet.Bar;
 using Busynet.Claude;
 using Busynet.Cli.Features.ClaudeLimits;
+using Busynet.Cli.Features.GitHubWorkflow;
+using Busynet.GitHub;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -12,7 +14,7 @@ namespace Busynet.Cli.Infrastructure;
 
 public static class ServiceRegistration
 {
-    /// <summary>Everything the commands need: the bar, Claude, logging to stderr, the clock and the environment.</summary>
+    /// <summary>Everything the commands need: the bar, Claude, GitHub, logging to stderr, the clock and the environment.</summary>
     public static IServiceCollection AddBusynet(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -21,9 +23,11 @@ public static class ServiceRegistration
         services.ConfigureHttpClientDefaults(b => b.RemoveAllLoggers());
         services.AddBusyBar();
         services.AddClaude();
+        services.AddGitHub();
 
         services.TryAddSingleton<Verbosity>();
         services.AddTransient<ClaudeLimitsCommand>();
+        services.AddTransient<GitHubWorkflowCommand>();
         services.AddLogging(b =>
         {
             b.ClearProviders();

@@ -6,9 +6,21 @@ namespace Busynet.Bar.Display;
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(TextElement), "text")]
 [JsonDerivedType(typeof(RectangleElement), "rectangle")]
+[JsonDerivedType(typeof(ImageElement), "image")]
 public abstract record DisplayElement(string Id, int X, int Y, string Display = "front");
 
-public sealed partial record TextElement(string Id, string Text, string Font, int X, int Y, string? Color = null)
+/// <summary>
+/// A line of text. With <c>Width</c> set, text wider than it scrolls at <c>ScrollRate</c> pixels per minute.
+/// </summary>
+public sealed partial record TextElement(
+    string Id,
+    string Text,
+    string Font,
+    int X,
+    int Y,
+    string? Color = null,
+    int? Width = null,
+    int? ScrollRate = null)
     : DisplayElement(Id, X, Y)
 {
     public string Text { get; } = PrintableAscii().IsMatch(Text)
@@ -29,3 +41,6 @@ public sealed record RectangleElement(
     IReadOnlyList<string> FillColors,
     string Fill = "solid",
     int BorderWidth = 0) : DisplayElement(Id, X, Y);
+
+/// <summary>An image from this application's uploaded assets (see <c>IBarDisplay.UploadAssetAsync</c>).</summary>
+public sealed record ImageElement(string Id, string Path, int X, int Y) : DisplayElement(Id, X, Y);

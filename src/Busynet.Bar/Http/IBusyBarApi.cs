@@ -10,4 +10,11 @@ public interface IBusyBarApi
 
     [Delete("/api/display/draw")]
     Task<HttpResponseMessage> ClearAsync([AliasAs("application_name")] string applicationName, CancellationToken ct);
+
+    [Post("/api/assets/upload")]
+    Task<HttpResponseMessage> UploadAssetAsync(
+        [AliasAs("application_name")] string applicationName,
+        [AliasAs("file")] string file,
+        [Body] HttpContent content,
+        CancellationToken ct);
 }

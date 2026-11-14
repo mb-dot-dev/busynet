@@ -242,6 +242,7 @@
           "Busynet.Bar": "[1.0.0, )",
           "Busynet.Claude": "[1.0.0, )",
           "Busynet.Core": "[1.0.0, )",
+          "Busynet.GitHub": "[1.0.0, )",
           "Microsoft.Extensions.Logging.Console": "[11.0.0, )",
           "System.CommandLine": "[3.0.0, )"
         }
@@ -267,6 +268,14 @@
         "type": "Project",
         "dependencies": {
           "System.Reactive": "[7.0.0, )"
+        }
+      },
+      "busynet.github": {
+        "type": "Project",
+        "dependencies": {
+          "Busynet.Core": "[1.0.0, )",
+          "Microsoft.Extensions.Http": "[11.0.0, )",
+          "Refit": "[16.4.0, )"
         }
       },
       "busynet.testing": {

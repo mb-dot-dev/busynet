@@ -7,21 +7,34 @@ namespace Busynet.Bar.Http;
 internal sealed class BarDisplay(IBusyBarApi api, TimeSpan responseTimeout) : IBarDisplay
 {
     private const string DrawPath = "/api/display/draw";
+    private const string UploadPath = "/api/assets/upload";
 
     // Observed on firmware 27.15.0: DELETE /api/display/draw answers 400 with this error when the
     // application has nothing on screen. The desired state already holds, so clearing treats it as success.
     private const string NothingDisplayedError = "this application_name is currently not displaying anything";
 
     public Task DrawAsync(DisplayElements payload, CancellationToken ct) =>
-        SendAsync("POST", ct => api.DrawAsync(payload, ct), ct);
+        SendAsync("POST", DrawPath, ct => api.DrawAsync(payload, ct), ct);
 
     public Task ClearAsync(CancellationToken ct) =>
-        SendAsync("DELETE", ct => api.ClearAsync(BarApplication.Name, ct), ct, IsNothingDisplayed);
+        SendAsync("DELETE", DrawPath, ct => api.ClearAsync(BarApplication.Name, ct), ct, IsNothingDisplayed);
+
+    public Task UploadAssetAsync(string file, ReadOnlyMemory<byte> content, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(file);
+
+        return SendAsync("POST", UploadPath, async ct =>
+        {
+            using var body = new ReadOnlyMemoryContent(content);
+            body.Headers.ContentType = new("application/octet-stream");
+            return await api.UploadAssetAsync(BarApplication.Name, file, body, ct).ConfigureAwait(false);
+        }, ct);
+    }
 
     private static bool IsNothingDisplayed(int status, string? error) =>
         status == 400 && string.Equals(error?.Trim(), NothingDisplayedError, StringComparison.OrdinalIgnoreCase);
 
-    private async Task SendAsync(string method, Func<CancellationToken, Task<HttpResponseMessage>> call, CancellationToken ct,
+    private async Task SendAsync(string method, string path, Func<CancellationToken, Task<HttpResponseMessage>> call, CancellationToken ct,
         Func<int, string?, bool>? isBenign = null)
     {
         ct.ThrowIfCancellationRequested();
@@ -38,7 +51,7 @@ internal sealed class BarDisplay(IBusyBarApi api, TimeSpan responseTimeout) : IB
             if (isBenign?.Invoke((int)response.StatusCode, error) == true)
                 return;
 
-            throw new BarApiException((int)response.StatusCode, method, DrawPath,
+            throw new BarApiException((int)response.StatusCode, method, path,
                 error ?? response.ReasonPhrase ?? "error", code);
         }
         catch (Exception e) when (e is HttpRequestException or OperationCanceledException or ApiRequestException)
@@ -46,7 +59,7 @@ internal sealed class BarDisplay(IBusyBarApi api, TimeSpan responseTimeout) : IB
             // Refit wraps transport failures and timeouts in ApiRequestException: report the inner type.
             ct.ThrowIfCancellationRequested();
             var cause = e is ApiRequestException { InnerException: { } inner } ? inner : e;
-            throw new BarRequestException(method, DrawPath, cause.GetType().Name);
+            throw new BarRequestException(method, path, cause.GetType().Name);
         }
     }
 

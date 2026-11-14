@@ -11,4 +11,7 @@
     <Protobuf Include="Buttons/Protos/state.proto" GrpcServices="None" />
     <ProjectReference Include="../Busynet.Core/Busynet.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets/*.png" LogicalName="Busynet.Bar.Assets.%(Filename)%(Extension)" />
+  </ItemGroup>
 </Project>

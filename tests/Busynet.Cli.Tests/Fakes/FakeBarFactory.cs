@@ -41,12 +41,15 @@ public sealed class FakeBarFactory : IBarFactory
 }
 
 /// <summary>
-/// Records every draw payload and clear (<see cref="Clear"/>) in <see cref="Calls"/>, in order. Failures can
-/// be queued; <see cref="OnDraw"/> runs inside each draw after it is recorded and before a queued failure.
+/// Records every draw payload, clear (<see cref="Clear"/>) and asset upload (<see cref="Upload"/>) in
+/// <see cref="Calls"/>, in order. Failures can be queued; <see cref="OnDraw"/> runs inside each draw after it is
+/// recorded and before a queued failure.
 /// </summary>
 public sealed class FakeBarDisplay : IBarDisplay
 {
     public const string Clear = "clear";
+
+    private readonly Queue<Exception> _uploadFailures = new();
 
     private readonly Lock _gate = new();
     private readonly List<object> _calls = [];
@@ -71,6 +74,14 @@ public sealed class FakeBarDisplay : IBarDisplay
         lock (_gate)
         {
             _drawFailures.Enqueue(exception);
+        }
+    }
+
+    public void FailNextUpload(Exception exception)
+    {
+        lock (_gate)
+        {
+            _uploadFailures.Enqueue(exception);
         }
     }
 
@@ -106,4 +117,19 @@ public sealed class FakeBarDisplay : IBarDisplay
 
         return failure is null ? Task.CompletedTask : Task.FromException(failure);
     }
+
+    public Task UploadAssetAsync(string file, ReadOnlyMemory<byte> content, CancellationToken ct)
+    {
+        Exception? failure;
+        lock (_gate)
+        {
+            _calls.Add(new Upload(file, content.Length));
+            _uploadFailures.TryDequeue(out failure);
+        }
+
+        return failure is null ? Task.CompletedTask : Task.FromException(failure);
+    }
+
+    /// <summary>One recorded asset upload.</summary>
+    public sealed record Upload(string File, int Length);
 }
