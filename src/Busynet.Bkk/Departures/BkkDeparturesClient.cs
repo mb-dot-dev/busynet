@@ -115,8 +115,13 @@ internal sealed class BkkDeparturesClient(IFutarApi api, FutarOptions options) :
     private static string? Text(JsonNode? node) =>
         node is JsonValue v && v.GetValueKind() == JsonValueKind.String ? v.GetValue<string>() : null;
 
+    private static readonly long MinSeconds = DateTimeOffset.MinValue.ToUnixTimeSeconds();
+    private static readonly long MaxSeconds = DateTimeOffset.MaxValue.ToUnixTimeSeconds();
+
+    // A value outside DateTimeOffset's range (e.g. milliseconds by mistake) counts as missing rather than throwing.
     private static DateTimeOffset? Seconds(JsonNode? node) =>
         node is JsonValue v && v.GetValueKind() == JsonValueKind.Number && v.TryGetValue<long>(out var s)
+            && s >= MinSeconds && s <= MaxSeconds
             ? DateTimeOffset.FromUnixTimeSeconds(s)
             : null;
 }

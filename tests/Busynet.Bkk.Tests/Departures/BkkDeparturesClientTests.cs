@@ -127,6 +127,7 @@ public sealed class BkkDeparturesClientTests
                 { "stopId": "BKK_F04808", "stopHeadsign": "Nowhere", "tripId": "MISSING", "departureTime": 1794697000 },
                 { "stopId": "BKK_F04808", "stopHeadsign": "Timeless", "tripId": "T922" },
                 { "stopId": "BKK_F04808", "tripId": "T922", "departureTime": "soon" },
+                { "stopId": "BKK_F04808", "tripId": "T922", "departureTime": 1794697440000000 },
             """,
             StringComparison.Ordinal);
 
