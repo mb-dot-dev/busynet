@@ -1,6 +1,8 @@
 using System.Reactive.Concurrency;
 using Busynet.Bar;
+using Busynet.Bkk;
 using Busynet.Claude;
+using Busynet.Cli.Features.BkkDepartures;
 using Busynet.Cli.Features.ClaudeLimits;
 using Busynet.Cli.Features.GitHubWorkflow;
 using Busynet.GitHub;
@@ -14,7 +16,7 @@ namespace Busynet.Cli.Infrastructure;
 
 public static class ServiceRegistration
 {
-    /// <summary>Everything the commands need: the bar, Claude, GitHub, logging to stderr, the clock and the environment.</summary>
+    /// <summary>Everything the commands need: the bar, Claude, GitHub, BKK, logging to stderr, the clock and the environment.</summary>
     public static IServiceCollection AddBusynet(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -24,10 +26,12 @@ public static class ServiceRegistration
         services.AddBusyBar();
         services.AddClaude();
         services.AddGitHub();
+        services.AddBkk();
 
         services.TryAddSingleton<Verbosity>();
         services.AddTransient<ClaudeLimitsCommand>();
         services.AddTransient<GitHubWorkflowCommand>();
+        services.AddTransient<BkkDeparturesCommand>();
         services.AddLogging(b =>
         {
             b.ClearProviders();
@@ -49,6 +53,7 @@ public static class ServiceRegistration
         });
 
         services.TryAddSingleton<IScheduler>(DefaultScheduler.Instance);
+        services.TryAddSingleton(TimeZoneInfo.Local);
         services.TryAddSingleton<Func<string, string?>>((IServiceProvider _) => Environment.GetEnvironmentVariable);
         return services;
     }

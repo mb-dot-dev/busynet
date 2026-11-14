@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Reflection;
+using Busynet.Cli.Features.BkkDepartures;
 using Busynet.Cli.Features.ClaudeLimits;
 using Busynet.Cli.Features.GitHubWorkflow;
 using Busynet.Cli.Infrastructure;
@@ -96,6 +97,10 @@ public static class BusynetApp
         var gh = new Command("gh", "GitHub on the bar.");
         gh.Subcommands.Add(GitHubWorkflowCommand.Define(provider));
         root.Subcommands.Add(gh);
+
+        var bkk = new Command("bkk", "BKK (Budapest public transport) on the bar.");
+        bkk.Subcommands.Add(BkkDeparturesCommand.Define(provider));
+        root.Subcommands.Add(bkk);
         return root;
     }
 
