@@ -3,6 +3,8 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>busynet</AssemblyName>
     <RootNamespace>Busynet.Cli</RootNamespace>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>busynet</ToolCommandName>
     <PackageId>busynet</PackageId>
