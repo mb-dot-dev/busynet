@@ -47,6 +47,41 @@ jobs:
           path: TestResults
           if-no-files-found: ignore
 
+  sonarqube:
+    name: Build, test & SonarQube
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/mb-dot-dev/gha-sdk-images:2.4.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: Begin analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          dotnet sonarscanner begin
+          /k:"mb-dot-dev_busynet"
+          /o:"mb-dot-dev"
+          /d:sonar.token="$SONAR_TOKEN"
+          /d:sonar.cs.vscoveragexml.reportsPaths="**/TestResults/**/coverage.xml"
+          /d:sonar.coverage.exclusions="tests/**"
+          /d:sonar.qualitygate.wait=true
+
+      - name: Build
+        run: dotnet build -c Release
+
+      - name: Test
+        run: >
+          dotnet test -c Release --no-build
+          --coverage --coverage-output-format xml --coverage-output coverage.xml
+
+      - name: End analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+
   tool-smoke:
     name: tool smoke test
     needs: build
