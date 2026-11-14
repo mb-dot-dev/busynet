@@ -104,6 +104,14 @@
           "Refit": "[16.4.0, )"
         }
       },
+      "busynet.bkk": {
+        "type": "Project",
+        "dependencies": {
+          "Busynet.Core": "[1.0.0, )",
+          "Microsoft.Extensions.Http": "[11.0.0, )",
+          "Refit": "[16.4.0, )"
+        }
+      },
       "busynet.claude": {
         "type": "Project",
         "dependencies": {

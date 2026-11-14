@@ -27,5 +27,6 @@
     <ProjectReference Include="../Busynet.Bar/Busynet.Bar.csproj" />
     <ProjectReference Include="../Busynet.Claude/Busynet.Claude.csproj" />
     <ProjectReference Include="../Busynet.GitHub/Busynet.GitHub.csproj" />
+    <ProjectReference Include="../Busynet.Bkk/Busynet.Bkk.csproj" />
   </ItemGroup>
 </Project>
