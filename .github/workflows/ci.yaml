@@ -18,13 +18,9 @@ permissions:
 jobs:
   # Linux build and tests run in the sonarqube job below; this one covers macOS.
   build:
-    name: build (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    name: build (macos-latest)
+    runs-on: macos-latest
     timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -46,7 +42,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}
         with:
-          name: test-results-${{ matrix.os }}
+          name: test-results-macos-latest
           path: TestResults
           if-no-files-found: ignore
 

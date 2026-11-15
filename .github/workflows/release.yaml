@@ -16,23 +16,15 @@ permissions:
 
 jobs:
   build:
-    name: build (${{ matrix.rid }})
-    runs-on: ${{ matrix.os }}
+    # Only macOS arm64 for now. To add Linux back, turn this into a matrix over os/rid/target: ubuntu-22.04 and
+    # ubuntu-22.04-arm (glibc 2.35), rids linux-x64 / linux-arm64, targets linux-amd64 / linux-arm64; then enable the
+    # matching Homebrew targets.
+    name: build (osx-arm64)
+    runs-on: macos-latest
     timeout-minutes: 20
-    strategy:
-      fail-fast: true
-      matrix:
-        include:
-          - os: macos-latest
-            rid: osx-arm64
-            target: darwin-arm64
-          # Linux binaries are built on 22.04 so they link against glibc 2.35 and run on older distros.
-          - os: ubuntu-22.04
-            rid: linux-x64
-            target: linux-amd64
-          - os: ubuntu-22.04-arm
-            rid: linux-arm64
-            target: linux-arm64
+    env:
+      RID: osx-arm64
+      TARGET: darwin-arm64
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -54,7 +46,7 @@ jobs:
         run: dotnet test -c Release
 
       - name: Publish (native AOT)
-        run: dotnet publish src/Busynet.Cli -c Release -r "${{ matrix.rid }}" -p:PublishAot=true -p:Version="$VERSION" -p:DebugType=none -o ./publish
+        run: dotnet publish src/Busynet.Cli -c Release -r "$RID" -p:PublishAot=true -p:Version="$VERSION" -p:DebugType=none -o ./publish
 
       - name: Smoke test
         run: |
@@ -64,11 +56,11 @@ jobs:
           ./publish/busynet bkk departures --help
 
       - name: Package
-        run: tar -C publish -czf "busynet-${VERSION}-${{ matrix.target }}.tar.gz" busynet
+        run: tar -C publish -czf "busynet-${VERSION}-${TARGET}.tar.gz" busynet
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: busynet-${{ matrix.target }}
+          name: busynet-${{ env.TARGET }}
           path: busynet-*
           if-no-files-found: error
 
@@ -113,8 +105,6 @@ jobs:
           homebrew_tap: homebrew-tap
           github_token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           target_darwin_arm64: true
-          target_linux_amd64: true
-          target_linux_arm64: true
           skip_checksum: true
           install: 'bin.install "busynet"'
           test: 'assert_match version.to_s, shell_output("#{bin}/busynet --version")'
