@@ -18,6 +18,7 @@ public sealed record LimitsState(Usage? Usage, LimitKind Kind)
             return null;
 
         var window = Kind == LimitKind.Session ? Usage.Session : Usage.Weekly;
-        return LimitGauge.From(LimitLabels.Format(Kind, window, now), window.Utilization);
+        double? timeProgress = window.ResetsAt is { } resetsAt ? 1 - (resetsAt - now) / LimitWindows.Of(Kind) : null;
+        return LimitGauge.From(LimitLabels.Format(Kind, window, now), window.Utilization, timeProgress);
     }
 }

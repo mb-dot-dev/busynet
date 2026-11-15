@@ -154,7 +154,7 @@ Things to know about the pipeline:
   poller's wait.
 - **Render reads the clock.** `Render(scheduler.Now)` computes the countdown (`3h49m`) at render time, so the label
   changes on every poll even when the usage percentage does not.
-- **Draws are deduplicated by value.** `LimitGauge` is a record, so `Equals` compares label, fill width and colour flag.
+- **Draws are deduplicated by value.** `LimitGauge` is a record, so `Equals` compares label, fill width, colour flag and time-marker offset.
   Redrawing an identical view would restart animations on the device, so it is skipped. `lastDrawn` is updated only
   after a *successful* draw. A view whose draw failed is therefore retried on the next update.
 - **`Concat` serialises draws.** Each `FromAsync` is cold, and `Concat` subscribes to the next one only after the
@@ -331,9 +331,10 @@ classDiagram
         +Label string
         +FillWidth int
         +High bool
+        +MarkerOffset int?
         +TrackWidth = 70$
         +HighThreshold = 85$
-        +From(label, percent)$ LimitGauge
+        +From(label, percent, timeProgress)$ LimitGauge
     }
     class LimitsLayout {
         <<static>>
@@ -848,6 +849,10 @@ stateDiagram-v2
 
 The gauge colour is a function of the rendered view: the track colour when `FillWidth == 0`, red when
 `percent > 85`, coral otherwise.
+
+The white time marker (`limit-time`, 1px wide, drawn over the fill) sits at `MarkerOffset`: the elapsed share of the
+window (5 hours for the session, 7 days for the weekly limit, from `LimitWindows.Of`) times the 70px track, clamped to
+the last pixel. `LimitsState.Render` computes it from `ResetsAt` and `now`; with no `ResetsAt` there is no marker.
 
 ### 6.2 `ButtonEventStream`: connection life cycle
 

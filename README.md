@@ -60,7 +60,8 @@ busynet claude limits [--interval <seconds>] [--host <host>] [--token <token>] [
 
 Shows your Claude usage limits on the bar and refreshes them every `--interval` seconds (default 180). Pressing the
 Start button toggles between the 5-hour and weekly limits. Labels look like `5h 85% 3h49m` (5-hour window: percent used, time until
-reset) and `wk 40% 6d` (weekly window). Press Ctrl+C to stop; the bar is cleared on exit.
+reset) and `wk 40% 6d` (weekly window). A white vertical line on the bar marks how much of the 5-hour or 7-day window has already
+elapsed, so you can compare it with the fill (usage). Press Ctrl+C to stop; the bar is cleared on exit.
 
 ```sh
 busynet gh workflow <WORKFLOW> [--branch <branch>] [--repo <owner/name>] [--interval <seconds>]
