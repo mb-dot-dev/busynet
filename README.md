@@ -7,7 +7,7 @@ currently available: `busynet claude limits`, `busynet gh workflow` and `busynet
 
 ## Install
 
-### Homebrew (macOS arm64, Linux x64 and arm64)
+### Homebrew (macOS arm64)
 
 Installs a prebuilt native AOT binary from the [mb-dot-dev/tap](https://github.com/mb-dot-dev/homebrew-tap) tap
 (no .NET runtime needed). Other platforms should use the .NET tool below.
@@ -23,9 +23,8 @@ brew update && brew upgrade busynet
 brew uninstall busynet
 ```
 
-Each `vX.Y.Z` tag publishes a GitHub release and updates the formula automatically. Linux binaries need glibc 2.35+
-(e.g. Ubuntu 22.04+, Debian 12+). Release assets come with a `SHA256SUMS` file and a build provenance
-attestation (`gh attestation verify <file> --repo mb-dot-dev/busynet`).
+Each `vX.Y.Z` tag publishes a GitHub release and updates the formula automatically. Release assets come with a
+`SHA256SUMS` file and a build provenance attestation (`gh attestation verify <file> --repo mb-dot-dev/busynet`).
 
 ### .NET tool
 
