@@ -44,7 +44,7 @@ public sealed class BkkDeparturesWatchTests
         {
             Departures = new ScriptedDepartures(polls);
             Task = BkkDeparturesWatch.RunAsync(
-                ct => Departures.GetDeparturesAsync("key", "BKK_F04808", ct),
+                ct => Departures.GetDeparturesAsync("key", "BKK_F04720", ct),
                 Display, interval, Rotate, Zone, Scheduler, NullLogger.Instance, Cts.Token);
             return this;
         }

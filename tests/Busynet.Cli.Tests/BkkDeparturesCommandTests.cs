@@ -59,7 +59,7 @@ public class BkkDeparturesCommandTests
 
         await app.RunAsync("bkk", "departures");
 
-        Assert.Equal((Key, "BKK_F04808"), departures.Calls[0]);
+        Assert.Equal((Key, "BKK_F04720"), departures.Calls[0]);
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public class BkkDeparturesCommandTests
     [InlineData("bkk", "departures", " ")]
     [InlineData("bkk", "departures", "--rotate", "0")]
     [InlineData("bkk", "departures", "--interval", "0")]
-    [InlineData("bkk", "departures", "BKK_F04808", "extra")]
+    [InlineData("bkk", "departures", "BKK_F04720", "extra")]
     [InlineData("bkk")]
     public async Task Bad_command_lines_exit_2(params string[] args)
     {
@@ -137,7 +137,7 @@ public class BkkDeparturesCommandTests
         Assert.Equal(0, exit);
         var help = app.ConsoleOut.ToString();
         Assert.Contains("STOP_ID", help, StringComparison.Ordinal);
-        Assert.Contains("BKK_F04808", help, StringComparison.Ordinal);
+        Assert.Contains("BKK_F04720", help, StringComparison.Ordinal);
         Assert.Contains("--interval", help, StringComparison.Ordinal);
         Assert.Contains("--rotate", help, StringComparison.Ordinal);
     }

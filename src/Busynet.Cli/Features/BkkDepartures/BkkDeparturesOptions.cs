@@ -19,7 +19,7 @@ public sealed class BkkDeparturesOptions
         _bar = bar;
         StopId = new Argument<string>("STOP_ID")
         {
-            Description = "BKK stop id; the default is Kötő utca towards Budapest.",
+            Description = "BKK stop id; the default is Kisfaludy utca, Budaörs.",
             Arity = ArgumentArity.ZeroOrOne,
             DefaultValueFactory = _ => BkkDeparturesSettings.DefaultStopId,
         };

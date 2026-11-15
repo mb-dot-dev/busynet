@@ -81,7 +81,7 @@ busynet bkk departures [STOP_ID] [--interval <seconds>] [--rotate <seconds>]
 
 Rotates the next 3 departures from a Budapest public-transport stop on the bar, one every `--rotate` seconds
 (default 5), polling the [BKK FUTÁR API](https://opendata.bkk.hu) every `--interval` seconds (default 30). `STOP_ID`
-defaults to `BKK_F04808` (Kötő utca, Budaörs, towards Budapest). The top row shows the position, line and time
+defaults to `BKK_F04720` (Kisfaludy utca, Budaörs). The top row shows the position, line and time
 (`1. 922 17'`); the bottom row shows the destination. Times are minutes until departure, or the clock time once a
 departure is an hour or more away; a `~` marks a timetable time with no live prediction. The API key is read from
 `BKK_API_KEY` only, so it never lands in shell history:
