@@ -154,7 +154,7 @@ public sealed class ClaudeUsageClientTests
 
         Assert.IsNotType<ClaudeAuthException>(e);
         Assert.IsNotType<ClaudeTransientException>(e);
-        Assert.IsNotAssignableFrom<ITransientFailure>(e);
+        Assert.IsNotType<ITransientFailure>(e, exactMatch: false);
         Assert.Equal("Claude usage API returned HTTP 404", e.Message);
     }
 

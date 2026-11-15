@@ -10,6 +10,12 @@ public static class ButtonEventStream
     private static readonly TimeSpan InitialDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan MaxDelay = TimeSpan.FromSeconds(30);
 
+    private static readonly Action<ILogger, TimeSpan, string, Exception?> LogReconnecting =
+        LoggerMessage.Define<TimeSpan, string>(
+            LogLevel.Debug,
+            new EventId(1, nameof(LogReconnecting)),
+            "Button stream dropped, reconnecting in {Delay}: {ErrorType}");
+
     /// <summary>
     /// Button events decoded from the frames of a (re)connecting source. Lazy: nothing connects until the
     /// first subscription. Shared: all subscribers use one connection, cancelled when the last one disposes.
@@ -47,7 +53,7 @@ public static class ButtonEventStream
 
                     var wait = delay;
                     delay = TimeSpan.FromTicks(Math.Min(delay.Ticks * 2, MaxDelay.Ticks));
-                    logger.LogDebug("Button stream dropped, reconnecting in {Delay}: {ErrorType}", wait, errorType);
+                    LogReconnecting(logger, wait, errorType, null);
                     pending.Disposable = scheduler.Schedule(wait, Connect);
                 }
 

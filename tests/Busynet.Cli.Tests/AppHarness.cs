@@ -15,7 +15,7 @@ public sealed class AppHarness : IDisposable
 
     public AppHarness(IDictionary<string, string>? environment = null)
     {
-        var env = new Dictionary<string, string>(environment ?? new Dictionary<string, string>());
+        Dictionary<string, string> env = environment is null ? [] : new(environment);
         Services.AddBusynet();
         // Keep the test output clean: tests that look at logs add their own provider.
         Services.RemoveAll<ILoggerProvider>();
