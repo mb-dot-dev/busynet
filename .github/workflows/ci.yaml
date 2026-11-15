@@ -9,19 +9,22 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Only cancel superseded PR runs; let every main run finish so SonarQube main-branch analysis is complete.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 jobs:
+  # Linux build and tests run in the sonarqube job below; this one covers macOS.
   build:
     name: build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [macos-latest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -50,16 +53,25 @@ jobs:
   sonarqube:
     name: Build, test & SonarQube
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     container:
       image: ghcr.io/mb-dot-dev/gha-sdk-images:2.4.0
+    env:
+      # Empty on fork PRs (secrets are not passed); the analysis steps are skipped then, build and tests still run.
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: nuget-${{ runner.os }}-
+
       - name: Begin analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        if: env.SONAR_TOKEN != ''
         run: >
           dotnet sonarscanner begin
           /k:"mb-dot-dev_busynet"
@@ -69,8 +81,11 @@ jobs:
           /d:sonar.coverage.exclusions="tests/**"
           /d:sonar.qualitygate.wait=true
 
+      - name: Restore
+        run: dotnet restore --locked-mode
+
       - name: Build
-        run: dotnet build -c Release
+        run: dotnet build -c Release --no-restore -warnaserror
 
       - name: Test
         run: >
@@ -78,14 +93,22 @@ jobs:
           --coverage --coverage-output-format xml --results-directory TestResults
 
       - name: End analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        if: env.SONAR_TOKEN != ''
         run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: test-results-ubuntu-latest
+          path: TestResults
+          if-no-files-found: ignore
 
   tool-smoke:
     name: tool smoke test
-    needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VERSION: 0.0.0-ci
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -96,17 +119,18 @@ jobs:
           cache-dependency-path: "**/packages.lock.json"
 
       - name: Pack
-        run: dotnet pack src/Busynet.Cli -c Release -o ./nupkg
+        run: dotnet pack src/Busynet.Cli -c Release -o ./nupkg -p:Version="$VERSION"
 
       - name: Install tool
-        run: dotnet tool install --tool-path ./tool --add-source ./nupkg --version 0.1.0 busynet
+        run: dotnet tool install --tool-path ./tool --add-source ./nupkg --version "$VERSION" busynet
 
       - name: Smoke test
         run: |
-          test "$(./tool/busynet --version)" = "0.1.0"
+          test "$(./tool/busynet --version)" = "$VERSION"
           ./tool/busynet --help
           ./tool/busynet claude limits --help
           ./tool/busynet gh workflow --help
+          ./tool/busynet bkk departures --help
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -116,8 +140,8 @@ jobs:
 
   aot-smoke:
     name: native AOT smoke test (${{ matrix.os }})
-    needs: build
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -128,6 +152,8 @@ jobs:
       - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
 
       - name: Publish (native AOT)
         run: dotnet publish src/Busynet.Cli -c Release -p:PublishAot=true -o ./aot
@@ -137,3 +163,4 @@ jobs:
           ./aot/busynet --help
           ./aot/busynet claude limits --help
           ./aot/busynet gh workflow --help
+          ./aot/busynet bkk departures --help
