@@ -56,9 +56,7 @@ public sealed class ButtonFrameDecoderTests
         var validBytes = valid.ToByteArray();
 
         byte[] frameUpdate = [0x52, 0x03, 0x01, 0x02, 0x03]; // StateUpdate field 10 (frame)
-        var bytes = new List<byte> { 0x09, 1, 2, 3, 4, 5, 6, 7, 8 }; // field 1 fixed64 timestamp
-        bytes.Add(0x12);
-        bytes.Add((byte)frameUpdate.Length);
+        var bytes = new List<byte> { 0x09, 1, 2, 3, 4, 5, 6, 7, 8, 0x12, (byte)frameUpdate.Length }; // field 1 fixed64 timestamp, then field 2 length
         bytes.AddRange(frameUpdate);
         bytes.AddRange(validBytes);
 

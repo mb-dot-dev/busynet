@@ -9,6 +9,12 @@ public static class Poller
     /// <summary>Retry-After comes from an untrusted server.</summary>
     private static readonly TimeSpan MaxRetryAfter = TimeSpan.FromHours(1);
 
+    private static readonly Action<ILogger, string, Exception?> LogPollFailed =
+        LoggerMessage.Define<string>(
+            LogLevel.Debug,
+            new EventId(1, nameof(LogPollFailed)),
+            "Poll failed, keeping the display as it is: {Error}");
+
     /// <summary>
     /// Waits <paramref name="initialDelay"/>, fetches, emits, waits <paramref name="interval"/>, repeats.
     /// Fetches never overlap. A transient failure emits nothing and the next wait becomes
@@ -41,7 +47,7 @@ public static class Poller
                                 return Observable.Throw<T>(e);
                             }
 
-                            logger.LogDebug("Poll failed, keeping the display as it is: {Error}", e.Message);
+                            LogPollFailed(logger, e.Message, null);
                             var requested = TimeSpan.FromTicks(Math.Clamp((retryAfter ?? TimeSpan.Zero).Ticks, 0, MaxRetryAfter.Ticks));
                             nextWait = requested > interval ? requested : interval;
                             return Observable.Empty<T>();
