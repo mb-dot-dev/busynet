@@ -43,8 +43,45 @@ public sealed class LimitsLayoutTests
     [Fact]
     public void Label_is_made_displayable()
     {
-        var label = Assert.IsType<TextElement>(LimitsLayout.Build(LimitGauge.From("é", 10)).Elements[2]);
+        var label = Assert.IsType<TextElement>(LimitsLayout.Build(LimitGauge.From("é", 10)).Elements[^1]);
 
         Assert.Equal("?", label.Text);
     }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(0.6, 42)]
+    [InlineData(1, 69)]
+    [InlineData(1.5, 69)]
+    [InlineData(-0.2, 0)]
+    public void Marker_offset_is_proportional_and_clamped(double progress, int offset) =>
+        Assert.Equal(offset, LimitGauge.From("x", 10, progress).MarkerOffset);
+
+    [Fact]
+    public void No_time_progress_means_no_marker()
+    {
+        var gauge = LimitGauge.From("x", 10);
+
+        Assert.Null(gauge.MarkerOffset);
+        Assert.Equal(3, LimitsLayout.Build(gauge).Elements.Count);
+    }
+
+    [Fact]
+    public void Marker_is_a_white_1px_rectangle_over_the_fill()
+    {
+        var elements = LimitsLayout.Build(LimitGauge.From("x", 30, 0.6)).Elements;
+
+        Assert.Equal("limit-fill", elements[1].Id);
+        var marker = Assert.IsType<RectangleElement>(elements[2]);
+        Assert.Equal("limit-time", marker.Id);
+        Assert.Equal((43, 8, 1, 8), (marker.X, marker.Y, marker.Width, marker.Height));
+        Assert.Equal(["#FFFFFFFF"], marker.FillColors);
+        Assert.IsType<TextElement>(elements[3]);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(95)]
+    public void Marker_is_drawn_on_an_empty_and_on_a_high_gauge(double percent) =>
+        Assert.Contains(LimitsLayout.Build(LimitGauge.From("x", percent, 0.5)).Elements, e => e.Id == "limit-time");
 }
