@@ -12,6 +12,10 @@ public static class ClaudeServiceCollectionExtensions
 {
     internal const string HttpClientName = "claude";
 
+#pragma warning disable S1075 // Fixed, well-known API endpoint.
+    private const string AnthropicApiBaseAddress = "https://api.anthropic.com";
+#pragma warning restore S1075
+
     public static IServiceCollection AddClaude(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -19,7 +23,7 @@ public static class ClaudeServiceCollectionExtensions
         // The Authorization header and URL carry the token: never let IHttpClientFactory log them.
         services.AddHttpClient(HttpClientName, c =>
         {
-            c.BaseAddress = new Uri("https://api.anthropic.com");
+            c.BaseAddress = new Uri(AnthropicApiBaseAddress);
             c.Timeout = ClaudeUsageOptions.DefaultTimeout;
         }).RemoveAllLoggers();
 
