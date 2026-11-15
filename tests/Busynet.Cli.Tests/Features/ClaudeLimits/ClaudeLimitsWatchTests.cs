@@ -96,7 +96,7 @@ public class ClaudeLimitsWatchTests
         using var h = new Harness();
         h.Run(UsageAt(h.Start));
 
-        Assert.Equal([FakeDisplay<LimitGauge>.Clear, LimitGauge.From("5h 85% 3h49m", 85)], h.Display.Calls);
+        Assert.Equal([FakeDisplay<LimitGauge>.Clear, LimitGauge.From("5h 85% 3h49m", 85, 71.0 / 300)], h.Display.Calls);
         Assert.Empty(h.Usage.Calls);
     }
 
@@ -212,7 +212,7 @@ public class ClaudeLimitsWatchTests
         h.RunTo(S(540));
 
         Assert.Equal(3, h.Usage.Calls.Count);
-        Assert.Equal([FakeDisplay<LimitGauge>.Clear, LimitGauge.From("5h 85% 3h49m", 85)], h.Display.Calls);
+        Assert.Equal([FakeDisplay<LimitGauge>.Clear, LimitGauge.From("5h 85% 3h49m", 85, 71.0 / 300)], h.Display.Calls);
         Assert.False(h.Task.IsCompleted);
     }
 

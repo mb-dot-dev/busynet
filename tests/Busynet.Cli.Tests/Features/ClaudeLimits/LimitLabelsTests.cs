@@ -61,11 +61,11 @@ public class LimitLabelsTests
 
     [Fact]
     public void Render_session_uses_raw_utilization_for_the_gauge() =>
-        Assert.Equal(LimitGauge.From("5h 85% 3h49m", 85.4), new LimitsState(SampleUsage, LimitKind.Session).Render(Now));
+        Assert.Equal(LimitGauge.From("5h 85% 3h49m", 85.4, 71.0 / 300), new LimitsState(SampleUsage, LimitKind.Session).Render(Now));
 
     [Fact]
     public void Render_weekly_shows_the_weekly_window() =>
-        Assert.Equal(LimitGauge.From("wk 40% 6d", 40), new LimitsState(SampleUsage, LimitKind.Weekly).Render(Now));
+        Assert.Equal(LimitGauge.From("wk 40% 6d", 40, 1.0 / 7), new LimitsState(SampleUsage, LimitKind.Weekly).Render(Now));
 
     [Fact]
     public void Toggle_flips_between_session_and_weekly()
